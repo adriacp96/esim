@@ -36,7 +36,7 @@ function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
     const color = type === 'error' ? 'bg-red-600' : 'bg-green-600';
-    toast.className = `${color} text-white px-5 py-3 rounded-lg shadow-xl transform transition-all translate-x-full font-bold flex items-center text-sm md:text-base`;
+    toast.className = `${color} text-white px-5 py-3 rounded-2xl shadow-xl transform transition-all translate-x-full font-bold flex items-center text-sm md:text-base`;
     toast.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'} mr-3 text-lg"></i> <span>${message}</span>`;
     container.appendChild(toast);
     setTimeout(() => toast.classList.remove('translate-x-full'), 10);
@@ -47,12 +47,20 @@ function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
     document.getElementById(tabId).classList.remove('hidden');
     
-    // Highlight Mobile Nav
-    document.querySelectorAll('.mob-nav-btn').forEach(btn => btn.classList.replace('text-blue-600', 'text-gray-400'));
-    document.querySelectorAll('.mob-nav-btn').forEach(btn => btn.classList.replace('text-purple-700', 'text-gray-400'));
-    if(event && event.currentTarget.classList.contains('mob-nav-btn')){
-        let color = userProfile.role === 'admin' ? 'text-purple-700' : 'text-blue-600';
-        event.currentTarget.classList.replace('text-gray-400', color);
+    // Highlight Nav Buttons (Desktop & Mobile)
+    document.querySelectorAll('.nav-btn, .mob-nav-btn').forEach(btn => {
+        btn.classList.remove('text-blue-600', 'text-purple-700', 'bg-gray-800');
+        if(btn.classList.contains('mob-nav-btn')) btn.classList.add('text-gray-400');
+    });
+
+    if(event && event.currentTarget) {
+        const btn = event.currentTarget;
+        if(btn.classList.contains('mob-nav-btn')) {
+            let color = userProfile.role === 'admin' ? 'text-purple-700' : 'text-blue-600';
+            btn.classList.replace('text-gray-400', color);
+        } else {
+            btn.classList.add('bg-gray-800');
+        }
     }
 
     // Toggle Sticky Mobile Summary
@@ -95,12 +103,26 @@ async function checkProfileAndLoadUI() {
         document.getElementById('desktop-user-nav').classList.add('hidden');
         document.getElementById('mob-admin-nav').classList.remove('hidden');
         document.getElementById('mob-user-nav').classList.add('hidden');
+        
+        // Auto-select first tab
+        const firstBtn = document.querySelector('#desktop-admin-nav button');
+        const firstMobBtn = document.querySelector('#mob-admin-nav button');
+        if(firstBtn) firstBtn.classList.add('bg-gray-800');
+        if(firstMobBtn) firstMobBtn.classList.replace('text-gray-400', 'text-purple-700');
+        
         switchTab('admin-requests-tab');
     } else {
         document.getElementById('desktop-user-nav').classList.remove('hidden');
         document.getElementById('desktop-admin-nav').classList.add('hidden');
         document.getElementById('mob-user-nav').classList.remove('hidden');
         document.getElementById('mob-admin-nav').classList.add('hidden');
+        
+        // Auto-select first tab
+        const firstBtn = document.querySelector('#desktop-user-nav button');
+        const firstMobBtn = document.querySelector('#mob-user-nav button');
+        if(firstBtn) firstBtn.classList.add('bg-gray-800');
+        if(firstMobBtn) firstMobBtn.classList.replace('text-gray-400', 'text-blue-600');
+
         switchTab('request-tab');
         updateSummary();
     }
@@ -232,45 +254,69 @@ async function requestEsim() {
         if(document.querySelector('input[name="country_selection"]:checked')) document.querySelector('input[name="country_selection"]:checked').checked = false;
         setDataType('total');
         updateSummary(); 
+        
+        // Auto switch tab & button highlight
+        document.querySelectorAll('.nav-btn, .mob-nav-btn').forEach(btn => btn.classList.remove('bg-gray-800', 'text-blue-600'));
+        document.querySelectorAll('.mob-nav-btn').forEach(btn => btn.classList.add('text-gray-400'));
+        
         switchTab('my-esims-tab');
+        
+        // Manually highlight the middle button
+        const dBtn = document.querySelectorAll('#desktop-user-nav button')[1];
+        const mBtn = document.querySelectorAll('#mob-user-nav button')[1];
+        if(dBtn) dBtn.classList.add('bg-gray-800');
+        if(mBtn) mBtn.classList.replace('text-gray-400', 'text-blue-600');
     }
 }
 
-// 6. HELPERS
-function getPlanDescription(req) {
+// 6. CARD HELPERS
+function getPlanDescriptionCard(req) {
     if (req.data_type === 'daily') {
         const diffDays = Math.round(Math.abs((new Date(req.end_date) - new Date(req.start_date)) / 86400000));
-        return `<span class="font-bold">${req.requested_gb}GB</span><span class="text-xs text-gray-500 ml-1">/day (${diffDays}d)</span>`;
-    } else return `<span class="font-bold">${req.requested_gb}GB</span><span class="text-xs text-gray-500 ml-1">(Total)</span>`;
+        return `<span class="font-bold text-gray-800 text-xl">${req.requested_gb}GB</span> <span class="text-gray-500 text-xs font-semibold ml-1">/ day (${diffDays} days)</span>`;
+    } else return `<span class="font-bold text-gray-800 text-xl">${req.requested_gb}GB</span> <span class="text-gray-500 text-xs font-semibold ml-1 uppercase">(Total)</span>`;
 }
 
-function getStatusIcon(status) {
-    if(status === 'pending') return `<span class="text-orange-500"><i class="fa-solid fa-hourglass-half"></i></span>`;
-    if(status === 'processing') return `<span class="text-blue-500"><i class="fa-solid fa-gear fa-spin"></i></span>`;
-    if(status === 'approved') return `<span class="text-green-500"><i class="fa-solid fa-check"></i></span>`;
-    if(status === 'rejected') return `<span class="text-red-500"><i class="fa-solid fa-xmark"></i></span>`;
+function getStatusBadge(status) {
+    if(status === 'pending') return `<span class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold border border-orange-200 shadow-sm"><i class="fa-solid fa-hourglass-half mr-1"></i> PENDING</span>`;
+    if(status === 'processing') return `<span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold border border-blue-200 shadow-sm"><i class="fa-solid fa-gear fa-spin mr-1"></i> ADMIN BUYING</span>`;
+    if(status === 'approved') return `<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-200 shadow-sm"><i class="fa-solid fa-check mr-1"></i> APPROVED</span>`;
+    if(status === 'rejected') return `<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold border border-red-200 shadow-sm"><i class="fa-solid fa-xmark mr-1"></i> CANCELLED</span>`;
     return status;
 }
 
-// 7. USER VIEWS
+// 7. USER VIEWS (Cards)
 async function loadUserRequests() {
     const { data, error } = await supabaseClient.from('esim_requests').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
     if (error) return;
-    const tbody = document.getElementById('user-requests-list');
-    tbody.innerHTML = '';
+    const container = document.getElementById('user-requests-list');
+    container.innerHTML = '';
+
+    if (data.length === 0) {
+        container.innerHTML = `<div class="col-span-full p-8 text-center text-gray-400 font-bold bg-white rounded-2xl border border-gray-100"><i class="fa-solid fa-ghost text-4xl mb-3 block"></i> No eSIMs yet.</div>`;
+        return;
+    }
+
     data.forEach(req => {
         let actionHTML = '';
-        if(req.status === 'approved' && req.installation_link) actionHTML = `<a href="${req.installation_link}" target="_blank" class="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap"><i class="fa-solid fa-qrcode"></i> Install</a>`;
-        else if(req.status === 'rejected') actionHTML = `<span class="text-red-400 text-xs italic">Cancelled</span>`;
-        else actionHTML = `<span class="text-gray-400 text-xs italic">Wait...</span>`;
+        if(req.status === 'approved' && req.installation_link) actionHTML = `<a href="${req.installation_link}" target="_blank" class="w-full text-center block bg-blue-100 text-blue-700 px-4 py-3 rounded-xl text-sm font-bold hover:bg-blue-200 transition"><i class="fa-solid fa-qrcode mr-2"></i> Install QR</a>`;
+        else if(req.status === 'rejected') actionHTML = `<div class="w-full text-center text-red-400 text-sm font-bold italic py-2">Request denied</div>`;
+        else if(req.status === 'processing') actionHTML = `<div class="w-full text-center text-blue-500 text-sm font-bold italic py-2">Hold on, admin is processing...</div>`;
+        else actionHTML = `<div class="w-full text-center text-gray-400 text-sm font-bold italic py-2">Waiting for admin to see it</div>`;
 
-        tbody.innerHTML += `
-            <tr class="border-b border-gray-50">
-                <td class="p-3 font-bold text-gray-800 text-sm whitespace-nowrap">${req.country}</td>
-                <td class="p-3 whitespace-nowrap">${getPlanDescription(req)}</td>
-                <td class="p-3 text-center">${getStatusIcon(req.status)}</td>
-                <td class="p-3">${actionHTML}</td>
-            </tr>
+        container.innerHTML += `
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition relative overflow-hidden group">
+                <div class="flex justify-between items-start mb-6 relative z-10">
+                    <div>
+                        <h4 class="font-black text-2xl text-gray-800 leading-tight">${req.country}</h4>
+                        <div class="mt-2">${getPlanDescriptionCard(req)}</div>
+                    </div>
+                </div>
+                <div class="absolute top-4 right-4 z-10">${getStatusBadge(req.status)}</div>
+                <div class="pt-4 border-t border-gray-50 mt-auto relative z-10">
+                    ${actionHTML}
+                </div>
+            </div>
         `;
     });
 }
@@ -288,78 +334,125 @@ async function loadUserBilling() {
         monthlyData[month].cost += parseFloat(req.price || 0);
         monthlyData[month].items += 1;
     });
-    const tbody = document.getElementById('user-billing-list');
-    tbody.innerHTML = '';
+    const container = document.getElementById('user-billing-list');
+    container.innerHTML = '';
     const sortedMonths = Object.keys(monthlyData).sort().reverse();
-    if(sortedMonths.length === 0) return tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-400 font-bold">No bills yet.</td></tr>`;
+    
+    if(sortedMonths.length === 0) return container.innerHTML = `<div class="col-span-full p-8 text-center text-gray-400 font-bold bg-white rounded-2xl border border-gray-100">No billing history yet.</div>`;
+    
     sortedMonths.forEach(month => {
         const info = monthlyData[month];
-        tbody.innerHTML += `
-            <tr class="border-b border-gray-50">
-                <td class="p-4 font-bold text-blue-600">${month}</td>
-                <td class="p-4 text-gray-500 text-sm">${info.items}</td>
-                <td class="p-4 text-gray-800 text-sm">${info.gb} GB</td>
-                <td class="p-4 font-black text-gray-900 text-right">${info.cost.toFixed(2)}</td>
-            </tr>
+        container.innerHTML += `
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-50">
+                    <h4 class="font-black text-xl text-blue-600">${month}</h4>
+                    <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded">${info.items} eSIMs</span>
+                </div>
+                <div class="flex justify-between items-end">
+                    <div>
+                        <p class="text-xs text-gray-400 font-bold uppercase mb-1">Total Used</p>
+                        <p class="font-bold text-gray-800">${info.gb} GB</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-gray-400 font-bold uppercase mb-1">Total Due</p>
+                        <p class="font-black text-3xl text-gray-900 leading-none">${info.cost.toFixed(2)}</p>
+                    </div>
+                </div>
+            </div>
         `;
     });
 }
 
-// 8. ADMIN VIEWS
+// 8. ADMIN VIEWS (Cards)
 async function loadAdminRequests() {
     const { data, error } = await supabaseClient.from('esim_requests').select('*, profiles(email)').order('created_at', { ascending: false });
     if (error) return;
-    const tbody = document.getElementById('admin-requests-list');
-    tbody.innerHTML = '';
+    const container = document.getElementById('admin-requests-list');
+    container.innerHTML = '';
     let pending = 0;
+
     data.forEach(req => {
         if (req.status === 'pending' || req.status === 'processing') {
             pending++;
             let actionArea = '';
+            
             if (req.status === 'pending') {
                 actionArea = `
-                    <div class="flex gap-2">
-                        <button onclick="changeStatus('${req.id}', 'rejected')" class="bg-red-50 text-red-500 p-2 rounded text-xs hover:bg-red-100"><i class="fa-solid fa-ban"></i></button>
-                        <button onclick="changeStatus('${req.id}', 'processing')" class="bg-blue-100 text-blue-700 px-3 py-2 rounded text-xs font-bold hover:bg-blue-200">Process</button>
+                    <div class="flex gap-2 mt-4">
+                        <button onclick="changeStatus('${req.id}', 'rejected')" class="bg-red-50 text-red-500 p-3 rounded-xl hover:bg-red-100 transition"><i class="fa-solid fa-ban"></i></button>
+                        <button onclick="changeStatus('${req.id}', 'processing')" class="flex-1 bg-blue-100 text-blue-700 py-3 rounded-xl font-bold hover:bg-blue-200 transition">Start Process</button>
                     </div>`;
             } else {
                 actionArea = `
-                    <div class="flex flex-col gap-1 w-48">
-                        <input type="text" id="link_${req.id}" class="border rounded p-1.5 text-xs outline-none focus:ring-1 focus:ring-purple-500" placeholder="QR Link...">
-                        <div class="flex gap-1">
-                            <input type="number" step="0.01" id="price_${req.id}" class="w-16 border rounded p-1.5 text-xs outline-none focus:ring-1 focus:ring-purple-500" placeholder="$$">
-                            <button onclick="approveRequest('${req.id}')" class="flex-1 bg-green-600 text-white px-2 py-1.5 rounded text-xs font-bold hover:bg-green-700">OK</button>
+                    <div class="flex flex-col gap-2 mt-4">
+                        <input type="text" id="link_${req.id}" class="bg-purple-50 border border-purple-100 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-purple-400" placeholder="Paste QR Link here...">
+                        <div class="flex gap-2">
+                            <div class="relative w-1/3">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 font-bold">$</span>
+                                <input type="number" step="0.01" id="price_${req.id}" class="w-full bg-purple-50 border border-purple-100 rounded-xl p-3 pl-8 text-sm outline-none focus:ring-2 focus:ring-purple-400 font-bold" placeholder="Cost">
+                            </div>
+                            <button onclick="approveRequest('${req.id}')" class="flex-1 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition shadow-md">Approve</button>
+                            <button onclick="changeStatus('${req.id}', 'rejected')" class="bg-red-50 text-red-500 px-4 rounded-xl hover:bg-red-100 transition"><i class="fa-solid fa-ban"></i></button>
                         </div>
                     </div>`;
             }
-            tbody.innerHTML += `
-                <tr class="border-b border-purple-50">
-                    <td class="p-3 text-xs"><p class="font-bold truncate w-24">${req.profiles?.email?.split('@')[0]}</p></td>
-                    <td class="p-3 text-sm font-bold text-purple-900">${req.country}<br><span class="text-xs text-purple-600 font-normal">${getPlanDescription(req)}</span></td>
-                    <td class="p-3 text-center">${getStatusIcon(req.status)}</td>
-                    <td class="p-3">${actionArea}</td>
-                </tr>`;
+            
+            container.innerHTML += `
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-purple-100 flex flex-col justify-between">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="truncate pr-2 w-full">
+                            <p class="text-xs text-gray-400 font-bold uppercase truncate">${req.profiles?.email || 'Unknown'}</p>
+                            <h4 class="font-black text-xl text-purple-900 truncate mt-1">${req.country}</h4>
+                        </div>
+                        <div class="shrink-0">${getStatusBadge(req.status)}</div>
+                    </div>
+                    <div class="mt-2">
+                        ${getPlanDescriptionCard(req)}
+                    </div>
+                    <div class="pt-4 border-t border-purple-50 mt-4">
+                        ${actionArea}
+                    </div>
+                </div>`;
         }
     });
-    if(pending===0) tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-400 font-bold">No pending requests!</td></tr>`;
+    
+    if(pending===0) container.innerHTML = `<div class="col-span-full p-8 text-center text-purple-300 font-bold bg-white rounded-3xl border border-purple-50"><i class="fa-solid fa-mug-hot text-4xl mb-3 block"></i> All caught up! No pending requests.</div>`;
 }
 
 async function loadAdminHistory() {
     const { data, error } = await supabaseClient.from('esim_requests').select('*, profiles(email)').order('created_at', { ascending: false });
     if (error) return;
-    const tbody = document.getElementById('admin-history-list');
-    tbody.innerHTML = '';
+    const container = document.getElementById('admin-history-list');
+    container.innerHTML = '';
+    
+    if (data.length === 0) return container.innerHTML = `<div class="col-span-full p-8 text-center text-gray-400 font-bold bg-white rounded-2xl border border-gray-100">No history found.</div>`;
+
     data.forEach(req => {
-        let linkHtml = req.installation_link ? `<a href="${req.installation_link}" target="_blank" class="text-blue-500"><i class="fa-solid fa-link"></i></a>` : '-';
-        let costStr = req.price ? `<span class="text-green-600 font-bold">${parseFloat(req.price).toFixed(2)}</span>` : '-';
-        tbody.innerHTML += `
-            <tr class="border-b border-gray-100">
-                <td class="p-3 text-xs truncate max-w-[80px]">${req.profiles?.email?.split('@')[0]}</td>
-                <td class="p-3 text-xs font-bold">${req.country}</td>
-                <td class="p-3 text-xs">${costStr}</td>
-                <td class="p-3 text-center text-xs">${getStatusIcon(req.status)} ${linkHtml}</td>
-                <td class="p-3 text-center"><button onclick="deleteRequest('${req.id}')" class="text-red-400 p-1"><i class="fa-solid fa-trash"></i></button></td>
-            </tr>`;
+        let dateStr = new Date(req.created_at).toLocaleDateString();
+        let linkHtml = req.installation_link ? `<a href="${req.installation_link}" target="_blank" class="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition"><i class="fa-solid fa-link"></i></a>` : '';
+        let costStr = req.price ? `<span class="text-green-600 font-black">${parseFloat(req.price).toFixed(2)}</span>` : '<span class="text-gray-300">-</span>';
+        
+        container.innerHTML += `
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex justify-between items-start mb-3 border-b border-gray-50 pb-3">
+                    <div class="truncate pr-2">
+                        <p class="text-xs text-gray-400 font-bold uppercase truncate">${req.profiles?.email?.split('@')[0] || 'Unknown'}</p>
+                        <h4 class="font-bold text-lg text-gray-800 truncate">${req.country}</h4>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <p class="text-xs text-gray-400">${dateStr}</p>
+                        ${getStatusBadge(req.status)}
+                    </div>
+                </div>
+                <div class="flex justify-between items-center mt-2">
+                    <div class="text-sm">${getPlanDescriptionCard(req)}</div>
+                    <div class="text-lg">${costStr}</div>
+                </div>
+                <div class="flex justify-between items-center mt-4 pt-3 border-t border-gray-50">
+                    <div>${linkHtml}</div>
+                    <button onclick="deleteRequest('${req.id}')" class="text-red-400 hover:bg-red-50 p-2 rounded-lg transition text-sm font-bold"><i class="fa-solid fa-trash mr-1"></i> Delete</button>
+                </div>
+            </div>`;
     });
 }
 
@@ -369,29 +462,47 @@ async function loadAdminBilling() {
     const adminMonthly = {};
     data.forEach(req => {
         const month = req.created_at.substring(0, 7);
-        const email = req.profiles?.email || '?';
+        const email = req.profiles?.email || 'Unknown';
         const key = `${month}_${email}`;
         if(!adminMonthly[key]) adminMonthly[key] = { email, month, gb: 0, cost: 0, items: 0 };
         let reqGb = parseFloat(req.requested_gb);
         if(req.data_type === 'daily') reqGb = reqGb * Math.round(Math.abs((new Date(req.end_date) - new Date(req.start_date)) / 86400000));
         adminMonthly[key].gb += reqGb; adminMonthly[key].cost += parseFloat(req.price || 0); adminMonthly[key].items += 1;
     });
-    const tbody = document.getElementById('admin-billing-records-list');
-    tbody.innerHTML = '';
+    
+    const container = document.getElementById('admin-billing-records-list');
+    container.innerHTML = '';
     const sortedKeys = Object.keys(adminMonthly).sort().reverse();
-    if(sortedKeys.length === 0) return tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-400">No bills.</td></tr>`;
+    
+    if(sortedKeys.length === 0) return container.innerHTML = `<div class="col-span-full p-8 text-center text-purple-300 font-bold bg-white rounded-2xl border border-purple-50">No bills generated yet.</div>`;
+    
     sortedKeys.forEach(key => {
         const info = adminMonthly[key];
-        tbody.innerHTML += `
-            <tr class="border-b border-purple-50">
-                <td class="p-3 text-xs font-bold truncate max-w-[100px]">${info.email}</td>
-                <td class="p-3 text-xs text-purple-700">${info.month}</td>
-                <td class="p-3 text-xs">${info.items}</td>
-                <td class="p-3 text-sm font-black text-right">${info.cost.toFixed(2)}</td>
-            </tr>`;
+        container.innerHTML += `
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-purple-100 flex flex-col justify-between">
+                <div class="flex justify-between items-center mb-4 pb-4 border-b border-purple-50">
+                    <h4 class="font-black text-xl text-purple-700">${info.month}</h4>
+                    <span class="bg-purple-50 text-purple-600 text-xs font-bold px-2 py-1 rounded-lg">${info.items} eSIMs</span>
+                </div>
+                <div class="mb-4">
+                    <p class="text-xs text-gray-400 font-bold uppercase mb-1">User</p>
+                    <p class="font-bold text-gray-800 truncate">${info.email}</p>
+                </div>
+                <div class="flex justify-between items-end">
+                    <div>
+                        <p class="text-xs text-gray-400 font-bold uppercase mb-1">Total Data</p>
+                        <p class="font-bold text-gray-600">${info.gb} GB</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-gray-400 font-bold uppercase mb-1">Total Due</p>
+                        <p class="font-black text-3xl text-gray-900 leading-none">${info.cost.toFixed(2)}</p>
+                    </div>
+                </div>
+            </div>`;
     });
 }
 
+// 9. API CALLS
 async function changeStatus(reqId, newStatus) {
     const { error } = await supabaseClient.from('esim_requests').update({ status: newStatus }).eq('id', reqId);
     if (error) showToast(error.message, 'error');
