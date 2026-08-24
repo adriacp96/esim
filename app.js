@@ -280,37 +280,35 @@ async function loadUserRequests() {
         let statusUI = '';
 
         if(req.status === 'approved' && req.installation_link) {
-            statusUI = `<div class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white tracking-widest uppercase">Active</div>`;
-            actionUI = `<a href="${req.installation_link}" target="_blank" class="w-full bg-white text-black text-center py-3 rounded-xl font-black active:scale-95 transition block shadow-xl"><i class="fa-solid fa-qrcode mr-2"></i> Install eSIM</a>`;
+            statusUI = `<span class="bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white tracking-widest uppercase">Active</span>`;
+            actionUI = `<a href="${req.installation_link}" target="_blank" class="bg-white text-black text-center px-4 py-2 rounded-xl font-black text-xs active:scale-95 transition inline-flex items-center shadow-md"><i class="fa-solid fa-qrcode mr-1.5"></i> Install</a>`;
         } else if(req.status === 'rejected') {
-            statusUI = `<div class="bg-red-500/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white tracking-widest uppercase">Cancelled</div>`;
-            actionUI = `<div class="w-full bg-black/20 text-white/50 text-center py-3 rounded-xl font-bold">Request Denied</div>`;
+            statusUI = `<span class="bg-red-500/80 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white tracking-widest uppercase">Cancelled</span>`;
+            actionUI = `<span class="text-white/50 text-xs font-bold">Denied</span>`;
         } else if(req.status === 'processing') {
-            statusUI = `<div class="bg-blue-500/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white tracking-widest uppercase"><i class="fa-solid fa-gear fa-spin mr-1"></i> Processing</div>`;
-            actionUI = `<div class="w-full bg-black/20 text-white text-center py-3 rounded-xl font-bold">Admin is preparing it...</div>`;
+            statusUI = `<span class="bg-blue-500/80 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white tracking-widest uppercase"><i class="fa-solid fa-gear fa-spin mr-1"></i> Processing</span>`;
+            actionUI = `<span class="text-white/80 text-xs font-bold">Preparing...</span>`;
         } else {
-            statusUI = `<div class="bg-orange-500/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white tracking-widest uppercase"><i class="fa-solid fa-clock mr-1"></i> Pending</div>`;
-            actionUI = `<div class="w-full bg-black/20 text-white text-center py-3 rounded-xl font-bold">Waiting for Admin</div>`;
+            statusUI = `<span class="bg-orange-500/80 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white tracking-widest uppercase"><i class="fa-solid fa-clock mr-1"></i> Pending</span>`;
+            actionUI = `<span class="text-white/80 text-xs font-bold">Waiting</span>`;
         }
 
         container.innerHTML += `
-            <div class="relative bg-gradient-to-br ${bgClass} rounded-[2rem] p-6 text-white shadow-xl shadow-black/10 overflow-hidden flex flex-col justify-between aspect-[4/3] md:aspect-[1.58/1]">
-                <div class="absolute -right-10 -top-10 text-white/10 text-9xl"><i class="fa-solid fa-sim-card"></i></div>
-                <div class="relative z-10 flex justify-between items-start">
-                    <div>
-                        <p class="text-white/70 text-[10px] font-bold tracking-widest uppercase mb-1">Destination</p>
-                        <h3 class="text-2xl font-black tracking-tight leading-none">${req.country}</h3>
+            <div class="relative bg-gradient-to-r ${bgClass} rounded-2xl p-5 text-white shadow-lg overflow-hidden flex items-center justify-between gap-4">
+                <div class="absolute -right-6 -bottom-6 text-white/10 text-7xl pointer-events-none"><i class="fa-solid fa-sim-card"></i></div>
+                <div class="relative z-10 min-w-0 flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <h3 class="text-lg font-black tracking-tight truncate">${req.country}</h3>
+                        ${statusUI}
                     </div>
-                    ${statusUI}
-                </div>
-                <div class="relative z-10 my-auto">
-                    <p class="text-white/70 text-[10px] font-bold tracking-widest uppercase mb-1">Data Plan</p>
-                    <div class="flex items-baseline gap-1">
-                        <span class="text-4xl font-black tracking-tighter">${plan.large}</span>
-                        <span class="text-xs font-bold text-white/80">${plan.small}</span>
+                    <div class="flex items-baseline gap-1.5">
+                        <span class="text-2xl font-black tracking-tighter">${plan.large}</span>
+                        <span class="text-[10px] font-bold text-white/80 uppercase">${plan.small}</span>
                     </div>
                 </div>
-                <div class="relative z-10 mt-4">${actionUI}</div>
+                <div class="relative z-10 shrink-0">
+                    ${actionUI}
+                </div>
             </div>`;
     });
 }
@@ -345,7 +343,7 @@ async function loadUserBilling() {
                     </div>
                     <div class="text-right">
                         <p class="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mb-1">Total Due</p>
-                        <p class="font-black text-4xl text-black tracking-tighter leading-none">${info.cost.toFixed(2)}</p>
+                        <p class="font-black text-3xl text-black tracking-tighter leading-none">${info.cost.toFixed(2)} <span class="text-sm font-bold text-zinc-500">AED</span></p>
                     </div>
                 </div>
             </div>`;
@@ -376,11 +374,11 @@ async function loadAdminRequests() {
                     <div class="flex flex-col gap-2">
                         <input type="text" id="link_${req.id}" class="bg-zinc-50 border-0 rounded-xl p-3 text-sm font-medium outline-none focus:ring-2 focus:ring-black" placeholder="Paste QR Link here...">
                         <div class="flex gap-2">
-                            <div class="relative w-1/3">
-                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-400 font-bold">$</span>
-                                <input type="number" step="0.01" id="price_${req.id}" class="w-full bg-zinc-50 border-0 rounded-xl p-3 pl-7 text-sm font-black outline-none focus:ring-2 focus:ring-black" placeholder="0.00">
+                            <div class="relative flex-1">
+                                <input type="number" step="0.01" id="price_${req.id}" class="w-full bg-zinc-50 border-0 rounded-xl p-3 pr-14 text-sm font-black outline-none focus:ring-2 focus:ring-black" placeholder="0.00">
+                                <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-xs font-bold text-zinc-400 uppercase">AED</span>
                             </div>
-                            <button onclick="approveRequest('${req.id}')" class="flex-1 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-lg active:scale-95">Send to User</button>
+                            <button onclick="approveRequest('${req.id}')" class="bg-blue-600 text-white px-4 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg active:scale-95">Send</button>
                             <button onclick="changeStatus('${req.id}', 'rejected')" class="bg-red-50 text-red-500 px-3 rounded-xl hover:bg-red-100 transition active:scale-95"><i class="fa-solid fa-ban"></i></button>
                         </div>
                     </div>`;
@@ -419,7 +417,7 @@ async function loadAdminHistory() {
     data.forEach(req => {
         const plan = getPlanInfo(req);
         let linkHtml = req.installation_link ? `<a href="${req.installation_link}" target="_blank" class="w-8 h-8 bg-zinc-100 text-zinc-600 hover:bg-blue-100 hover:text-blue-600 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-link text-xs"></i></a>` : '';
-        let costStr = req.price ? `<span class="text-green-600 font-black">${parseFloat(req.price).toFixed(2)}</span>` : '<span class="text-zinc-300">-</span>';
+        let costStr = req.price ? `<span class="text-green-600 font-black">${parseFloat(req.price).toFixed(2)} <span class="text-xs font-bold text-zinc-400">AED</span></span>` : '<span class="text-zinc-300">-</span>';
         
         container.innerHTML += `
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-zinc-100 flex items-center justify-between gap-4">
@@ -430,7 +428,7 @@ async function loadAdminHistory() {
                     <p class="text-xs text-zinc-500 font-medium">${plan.large} ${plan.small.toLowerCase()}</p>
                 </div>
                 <div class="text-right">
-                    <div class="text-lg">${costStr}</div>
+                    <div class="text-base">${costStr}</div>
                 </div>
                 <div class="flex items-center gap-2 border-l border-zinc-100 pl-4 ml-2">
                     ${linkHtml}
@@ -479,7 +477,7 @@ async function loadAdminBilling() {
                     </div>
                     <div class="text-right">
                         <p class="text-[10px] text-zinc-400 font-bold tracking-widest uppercase mb-1">Total Due</p>
-                        <p class="font-black text-4xl text-black tracking-tighter leading-none">${info.cost.toFixed(2)}</p>
+                        <p class="font-black text-3xl text-black tracking-tighter leading-none">${info.cost.toFixed(2)} <span class="text-sm font-bold text-zinc-500">AED</span></p>
                     </div>
                 </div>
             </div>`;
