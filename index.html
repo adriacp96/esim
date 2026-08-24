@@ -187,6 +187,13 @@
                                     <div class="text-zinc-400 font-bold mb-1 uppercase tracking-widest text-xs">Days</div>
                                 </div>
                                 <input type="range" id="days_slider" min="1" max="30" value="7" class="slider-orange" oninput="updateSummary()">
+                                
+                                <!-- Terms / Activation Info Box -->
+                                <div class="mt-4 bg-orange-50 border border-orange-100 rounded-xl p-3 text-[11px] text-orange-900 space-y-1.5 font-medium">
+                                    <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i> Data resets every 24 hours after activation.</p>
+                                    <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i> Valid for the purchased number of days. Each 24-hour period counts as 1 day.</p>
+                                    <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i> Can be installed in advance. Install only when in the coverage area and ready to use to avoid early activation.</p>
+                                </div>
                             </div>
                         </div>
 
@@ -236,7 +243,6 @@
                 </div>
             </div>
 
-            <!-- COMPACT WALLET TAB -->
             <div id="my-esims-tab" class="tab-content hidden max-w-md mx-auto md:max-w-5xl">
                 <div class="flex justify-between items-end mb-6 md:mb-10">
                     <div>
