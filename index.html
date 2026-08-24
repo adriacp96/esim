@@ -106,8 +106,7 @@
             </div>
         </aside>
 
-        <!-- Increased bottom padding from pb-36 to pb-44 to keep elements fully visible above navigation -->
-        <main class="flex-1 overflow-y-auto bg-[#F4F4F5] px-4 pt-4 pb-44 md:p-10 relative">
+        <main class="flex-1 overflow-y-auto bg-[#F4F4F5] px-4 pt-4 pb-36 md:p-10 relative">
             
             <div id="request-tab" class="tab-content hidden max-w-lg mx-auto md:max-w-5xl">
                 <div class="mb-4 md:mb-8 text-center md:text-left">
@@ -190,8 +189,31 @@
                                 <input type="range" id="days_slider" min="1" max="30" value="7" class="slider-orange" oninput="updateSummary()">
                             </div>
                         </div>
+
+                        <!-- MOBILE CHECKOUT CARD: Embedded directly into the scrolling stream below options so it's 100% visible and never floats over menus -->
+                        <div id="mobile-summary" class="lg:hidden bg-zinc-900 rounded-[2rem] p-6 text-white shadow-xl mt-4 hidden animate-slide-up">
+                            <div class="mb-4">
+                                <h3 class="font-black text-xl tracking-tight">Checkout</h3>
+                                <p class="text-zinc-400 text-xs mt-0.5">Review your plan.</p>
+                            </div>
+                            <div class="space-y-3 mb-6">
+                                <div class="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700/50">
+                                    <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-1">Destination</p>
+                                    <div id="mob_sum_country" class="font-bold text-base text-zinc-300">Select Region</div>
+                                </div>
+                                <div class="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700/50">
+                                    <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-1">Data Plan</p>
+                                    <div id="mob_sum_data" class="font-black text-xl text-white">-</div>
+                                </div>
+                            </div>
+                            <button type="button" onclick="requestEsim()" id="mob_submit_btn" disabled class="w-full bg-white disabled:bg-zinc-800 disabled:text-zinc-600 text-black font-black py-4 rounded-xl transition-all active:scale-95 disabled:shadow-none">
+                                Request eSIM
+                            </button>
+                        </div>
+
                     </div>
 
+                    <!-- DESKTOP CHECKOUT COLUMN -->
                     <div class="hidden lg:block lg:col-span-2">
                         <div class="bg-zinc-900 rounded-[2rem] p-8 text-white shadow-2xl sticky top-10">
                             <div class="mb-8">
@@ -279,21 +301,10 @@
             </div>
             <div id="mob-admin-nav" class="w-full flex justify-between hidden">
                 <button onclick="switchTab('admin-requests-tab')" class="mob-nav-btn relative w-1/3 py-2 text-zinc-400 flex flex-col items-center rounded-2xl transition-all"><i class="fa-solid fa-inbox text-lg mb-0.5"></i><span class="text-[9px] font-bold uppercase tracking-widest">Inbox</span></button>
-                <button onclick="switchStr = switchTab('admin-history-tab')" class="mob-nav-btn relative w-1/3 py-2 text-zinc-400 flex flex-col items-center rounded-2xl transition-all" onclick="switchTab('admin-history-tab')"><i class="fa-solid fa-database text-lg mb-0.5"></i><span class="text-[9px] font-bold uppercase tracking-widest">Data</span></button>
+                <button onclick="switchTab('admin-history-tab')" class="mob-nav-btn relative w-1/3 py-2 text-zinc-400 flex flex-col items-center rounded-2xl transition-all"><i class="fa-solid fa-database text-lg mb-0.5"></i><span class="text-[9px] font-bold uppercase tracking-widest">Data</span></button>
                 <button onclick="switchTab('admin-billing-tab')" class="mob-nav-btn relative w-1/3 py-2 text-zinc-400 flex flex-col items-center rounded-2xl transition-all"><i class="fa-solid fa-chart-line text-lg mb-0.5"></i><span class="text-[9px] font-bold uppercase tracking-widest">Rev</span></button>
             </div>
         </nav>
-
-        <!-- Changed bottom offset from bottom-[76px] to bottom-[88px] to clear the navigation bar safely -->
-        <div id="mobile-summary" class="lg:hidden fixed bottom-[88px] left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-40 hidden animate-slide-up">
-            <button type="button" onclick="requestEsim()" id="mob_submit_btn" disabled class="w-full bg-black disabled:bg-zinc-300 disabled:text-zinc-500 text-white font-black py-3 rounded-2xl shadow-2xl transition-all flex justify-between items-center px-5 active:scale-95">
-                <div class="text-left">
-                    <span id="mob_sum_country" class="block text-[10px] text-zinc-400 uppercase tracking-widest leading-none mb-1">Select Region</span>
-                    <span id="mob_sum_data" class="block text-sm leading-none">-</span>
-                </div>
-                <i class="fa-solid fa-arrow-right text-lg"></i>
-            </button>
-        </div>
 
     </div>
 
