@@ -1,100 +1,107 @@
-// 1. Supabase Configuration
+// 1. Supabase Config (WITH YOUR CREDENTIALS)
 const SUPABASE_URL = 'https://dvutnthqhkmqzgkihdtd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR2dXRudGhxaGttcXpna2loZHRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1MzcxOTAsImV4cCI6MjEwMzExMzE5MH0.nfcTnpmzJ8Jz9bO10Xox9T6D1UOF7fwfG-3IOtn9ceI';
-
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Global state variables
 let currentUser = null;
 let userProfile = null;
 
-// 2. UI Initialization
+// 2. Initialization & Router
 document.addEventListener('DOMContentLoaded', () => {
-    // Configure minimum date input (24h in advance)
+    // Set min date for requests
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const minDate = tomorrow.toISOString().split('T')[0];
-    document.getElementById('start_date').min = minDate;
-    document.getElementById('end_date').min = minDate;
+    if(document.getElementById('start_date')) {
+        document.getElementById('start_date').min = minDate;
+        document.getElementById('end_date').min = minDate;
+    }
 
-    // Listen to session changes
+    // Auth State Listener
     supabase.auth.onAuthStateChange((event, session) => {
         if (session) {
             currentUser = session.user;
-            document.getElementById('user-email').innerText = currentUser.email;
+            document.getElementById('user-display-email').innerText = currentUser.email;
+            document.getElementById('auth-view').classList.add('hidden');
+            document.getElementById('app-layout').classList.remove('hidden');
             checkProfileAndLoadUI();
         } else {
             currentUser = null;
             userProfile = null;
-            showView('auth-view');
+            document.getElementById('auth-view').classList.remove('hidden');
+            document.getElementById('app-layout').classList.add('hidden');
         }
     });
 });
 
-// 3. UI Utility Functions
-function showView(viewId) {
-    document.getElementById('auth-view').classList.add('hidden');
-    document.getElementById('user-view').classList.add('hidden');
-    document.getElementById('admin-view').classList.add('hidden');
+// Toast Notifications
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    const color = type === 'error' ? 'bg-red-500' : 'bg-green-500';
+    toast.className = `${color} text-white px-6 py-3 rounded shadow-lg transform transition-all duration-300 translate-x-full`;
+    toast.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'} mr-2"></i> ${message}`;
     
-    if(viewId !== 'auth-view') {
-        document.getElementById('navbar').classList.remove('hidden');
-    } else {
-        document.getElementById('navbar').classList.add('hidden');
-    }
-
-    document.getElementById(viewId).classList.remove('hidden');
+    container.appendChild(toast);
+    
+    setTimeout(() => toast.classList.remove('translate-x-full'), 10);
+    setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
 }
 
-function showError(msg) {
-    const errorEl = document.getElementById('auth-error');
-    errorEl.innerText = msg;
-    errorEl.classList.remove('hidden');
+// Tab Management
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+    document.getElementById(tabId).classList.remove('hidden');
+    
+    if (tabId === 'my-esims-tab') loadUserRequests();
+    if (tabId === 'billing-tab') loadUserBilling();
+    if (tabId === 'admin-requests-tab') loadAdminRequests();
+    if (tabId === 'admin-billing-tab') loadAdminDropdown();
 }
 
-// 4. Authentication
+// 3. Auth Functions
 async function login() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) showError(error.message);
+    if (error) showToast(error.message, 'error');
 }
 
 async function register() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const { error } = await supabase.auth.signUp({ email, password });
-    if (error) showError(error.message);
-    else alert("Registration successful. Check your email or log in.");
+    if (error) showToast(error.message, 'error');
+    else showToast('Registration successful! Please login.');
 }
 
 async function logout() {
     await supabase.auth.signOut();
 }
 
-// 5. Main Data Loading
+// 4. Role Routing
 async function checkProfileAndLoadUI() {
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', currentUser.id)
-        .single();
-    
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
     userProfile = profile || { role: 'user' }; 
 
     if (userProfile.role === 'admin') {
-        showView('admin-view');
-        loadAdminRequests();
+        document.getElementById('admin-nav').classList.remove('hidden');
+        document.getElementById('user-nav').classList.add('hidden');
+        switchTab('admin-requests-tab');
     } else {
-        showView('user-view');
-        loadUserRequests();
+        document.getElementById('user-nav').classList.remove('hidden');
+        document.getElementById('admin-nav').classList.add('hidden');
+        switchTab('request-tab');
     }
 }
 
-// 6. User Logic (Friends)
+// 5. USER: Request & View eSIMs
 async function requestEsim(e) {
     e.preventDefault();
-    const newRequest = {
+    const payload = {
         user_id: currentUser.id,
         country: document.getElementById('country').value,
         start_date: document.getElementById('start_date').value,
@@ -104,73 +111,81 @@ async function requestEsim(e) {
         status: 'pending'
     };
 
-    const { error } = await supabase.from('esim_requests').insert([newRequest]);
-    
-    if (error) {
-        alert("Error requesting: " + error.message);
-    } else {
-        alert("Request sent successfully");
+    const { error } = await supabase.from('esim_requests').insert([payload]);
+    if (error) showToast(error.message, 'error');
+    else {
+        showToast('Request sent successfully!');
         document.getElementById('esim-form').reset();
-        loadUserRequests(); 
+        switchTab('my-esims-tab');
     }
 }
 
 async function loadUserRequests() {
-    const { data, error } = await supabase
-        .from('esim_requests')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false });
-
-    if (error) return console.error(error);
+    const { data, error } = await supabase.from('esim_requests').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+    if (error) return;
 
     const tbody = document.getElementById('user-requests-list');
     tbody.innerHTML = '';
 
     data.forEach(req => {
-        let installBtn = req.status === 'approved' && req.installation_link 
-            ? `<a href="${req.installation_link}" target="_blank" class="text-blue-600 underline font-bold">View QR/Install</a>` 
-            : `<span class="text-gray-400">Not available</span>`;
+        let btn = req.status === 'approved' && req.installation_link 
+            ? `<a href="${req.installation_link}" target="_blank" class="bg-blue-100 text-blue-700 px-3 py-1 rounded text-xs font-bold hover:bg-blue-200">Install QR</a>` 
+            : `<span class="text-gray-400 text-xs">Waiting...</span>`;
         
-        let statusColor = req.status === 'pending' ? 'text-orange-500' : 'text-green-600';
+        let statusTag = req.status === 'pending' 
+            ? `<span class="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold">PENDING</span>` 
+            : `<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">APPROVED</span>`;
 
         tbody.innerHTML += `
-            <tr class="border-b">
-                <td class="p-2">${req.country}</td>
-                <td class="p-2">${req.start_date} to ${req.end_date}</td>
-                <td class="p-2">${req.requested_gb}GB (${req.data_type})</td>
-                <td class="p-2 font-semibold ${statusColor}">${req.status.toUpperCase()}</td>
-                <td class="p-2">${installBtn}</td>
+            <tr class="hover:bg-gray-50">
+                <td class="p-4 font-semibold text-gray-800">${req.country}</td>
+                <td class="p-4 text-gray-600">${req.start_date} <br> ${req.end_date}</td>
+                <td class="p-4 text-gray-600">${req.requested_gb}GB (${req.data_type})</td>
+                <td class="p-4">${statusTag}</td>
+                <td class="p-4">${btn}</td>
             </tr>
         `;
     });
 }
 
-// 7. Admin Logic (You)
-async function loadAdminRequests() {
-    const { data, error } = await supabase
-        .from('esim_requests')
-        .select('*')
-        .eq('status', 'pending')
-        .order('start_date', { ascending: true });
+// 6. USER: Billing View
+async function loadUserBilling() {
+    const { data, error } = await supabase.from('consumptions').select('*, esim_requests(country)').eq('user_id', currentUser.id).order('billing_month', { ascending: false });
+    if (error) return;
 
-    if (error) return console.error(error);
+    const tbody = document.getElementById('user-billing-list');
+    tbody.innerHTML = '';
+
+    data.forEach(bill => {
+        tbody.innerHTML += `
+            <tr class="hover:bg-gray-50">
+                <td class="p-4 font-semibold text-gray-800">${bill.billing_month} <span class="text-xs text-gray-400 ml-2">(${bill.esim_requests.country})</span></td>
+                <td class="p-4 text-gray-600">${bill.used_gb} GB</td>
+                <td class="p-4 font-bold text-gray-900 text-right">${bill.total_due}</td>
+            </tr>
+        `;
+    });
+}
+
+// 7. ADMIN: Manage Requests
+async function loadAdminRequests() {
+    const { data, error } = await supabase.from('esim_requests').select('*, profiles(email)').eq('status', 'pending').order('start_date', { ascending: true });
+    if (error) return;
 
     const tbody = document.getElementById('admin-requests-list');
     tbody.innerHTML = '';
 
     data.forEach(req => {
         tbody.innerHTML += `
-            <tr class="border-b">
-                <td class="p-2">${req.id.substring(0,6)}...</td>
-                <td class="p-2 font-bold">${req.country}</td>
-                <td class="p-2">${req.start_date} <br> ${req.end_date}</td>
-                <td class="p-2">${req.requested_gb}GB (${req.data_type})</td>
-                <td class="p-2">
-                    <input type="text" id="link_${req.id}" class="border p-1 w-full text-sm" placeholder="URL or QR Link">
+            <tr class="hover:bg-gray-50">
+                <td class="p-4 font-medium text-gray-800">${req.profiles.email}</td>
+                <td class="p-4 font-bold">${req.country}</td>
+                <td class="p-4 text-gray-600">${req.start_date} to ${req.end_date} <br> <span class="text-xs font-bold">${req.requested_gb}GB (${req.data_type})</span></td>
+                <td class="p-4">
+                    <input type="text" id="link_${req.id}" class="border border-gray-300 rounded p-1 w-full text-sm outline-none focus:ring-1 focus:ring-blue-500" placeholder="Paste QR URL...">
                 </td>
-                <td class="p-2">
-                    <button onclick="approveRequest('${req.id}')" class="bg-green-500 text-white px-2 py-1 rounded text-sm hover:bg-green-600">Approve & Send</button>
+                <td class="p-4">
+                    <button onclick="approveRequest('${req.id}')" class="bg-green-600 text-white px-3 py-1 rounded text-sm font-bold hover:bg-green-700 shadow">Approve</button>
                 </td>
             </tr>
         `;
@@ -179,17 +194,50 @@ async function loadAdminRequests() {
 
 async function approveRequest(reqId) {
     const linkInput = document.getElementById(`link_${reqId}`).value;
+    if(!linkInput) return showToast("Provide an installation link", "error");
+
+    const { error } = await supabase.from('esim_requests').update({ status: 'approved', installation_link: linkInput }).eq('id', reqId);
+    if (error) showToast(error.message, 'error');
+    else {
+        showToast("eSIM Approved!");
+        loadAdminRequests(); 
+    }
+}
+
+// 8. ADMIN: Add Billing
+async function loadAdminDropdown() {
+    // Load approved requests to attach bills to them
+    const { data } = await supabase.from('esim_requests').select('id, country, requested_gb, profiles(email)').eq('status', 'approved');
+    const select = document.getElementById('bill_request_id');
+    select.innerHTML = '<option value="">Select a request...</option>';
     
-    if(!linkInput) return alert("Please enter the eSIM installation link");
+    if(data) {
+        data.forEach(req => {
+            select.innerHTML += `<option value="${req.id}" data-user="${req.profiles.id}">${req.profiles.email} - ${req.country} (${req.requested_gb}GB)</option>`;
+        });
+    }
+}
 
-    const { error } = await supabase
-        .from('esim_requests')
-        .update({ 
-            status: 'approved', 
-            installation_link: linkInput 
-        })
-        .eq('id', reqId);
+async function addBillingRecord(e) {
+    e.preventDefault();
+    const select = document.getElementById('bill_request_id');
+    const selectedOption = select.options[select.selectedIndex];
+    
+    // We need the user_id of the person who made the request
+    const { data: requestData } = await supabase.from('esim_requests').select('user_id, requested_gb').eq('id', select.value).single();
 
-    if (error) alert("Error approving: " + error.message);
-    else loadAdminRequests(); 
+    const payload = {
+        user_id: requestData.user_id,
+        request_id: select.value,
+        billing_month: document.getElementById('bill_month').value,
+        used_gb: requestData.requested_gb, 
+        total_due: document.getElementById('bill_cost').value
+    };
+
+    const { error } = await supabase.from('consumptions').insert([payload]);
+    if (error) showToast(error.message, 'error');
+    else {
+        showToast("Bill recorded successfully!");
+        document.getElementById('billing-form').reset();
+    }
 }
