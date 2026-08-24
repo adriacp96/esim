@@ -104,7 +104,7 @@ async function checkProfileAndLoadUI() {
 }
 
 // ==========================================
-// 5. VISUAL SELECTOR LOGIC (No Dates)
+// 5. VISUAL SELECTOR LOGIC
 // ==========================================
 
 function setDataType(type) {
@@ -112,6 +112,7 @@ function setDataType(type) {
     const slider = document.getElementById('gb_slider');
     const btnTotal = document.getElementById('btn_type_total');
     const btnDaily = document.getElementById('btn_type_daily');
+    const daysContainer = document.getElementById('days_container');
     
     if(type === 'total') {
         btnTotal.className = "flex-1 py-2 text-sm font-bold rounded-md bg-white shadow-sm text-blue-700 transition";
@@ -119,12 +120,14 @@ function setDataType(type) {
         document.getElementById('slider-type-display').innerText = "total";
         slider.max = "50";
         document.getElementById('slider-max-label').innerText = "50 GB+";
+        daysContainer.classList.add('hidden'); // Hide days slider
     } else {
         btnDaily.className = "flex-1 py-2 text-sm font-bold rounded-md bg-white shadow-sm text-blue-700 transition";
         btnTotal.className = "flex-1 py-2 text-sm font-bold rounded-md text-gray-500 hover:text-gray-800 transition";
         document.getElementById('slider-type-display').innerText = "/ day";
         slider.max = "10";
         document.getElementById('slider-max-label').innerText = "10 GB";
+        daysContainer.classList.remove('hidden'); // Show days slider
         
         if(parseInt(slider.value) > 10) slider.value = 5; 
     }
@@ -171,9 +174,16 @@ function updateSummary() {
 
         const gbValue = document.getElementById('gb_slider').value;
         document.getElementById('slider-val-display').innerText = gbValue;
-        
-        const typeLabel = currentDataType === 'total' ? 'Total' : '/ Day';
-        const dataString = `${gbValue} GB <span class="text-sm font-normal text-gray-400">(${typeLabel})</span>`;
+
+        // Days logic
+        let dataString = "";
+        if (currentDataType === 'total') {
+            dataString = `${gbValue} GB <span class="text-sm font-normal text-gray-400">(Total)</span>`;
+        } else {
+            const daysValue = document.getElementById('days_slider').value;
+            document.getElementById('days-val-display').innerText = daysValue;
+            dataString = `${gbValue} GB <span class="text-sm font-normal text-gray-300">/ day for ${daysValue} Days</span>`;
+        }
         
         const sumData = document.getElementById('sum_data');
         if (sumData.dataset.val !== dataString) {
@@ -194,13 +204,22 @@ async function requestEsim() {
     let selectedCountry = document.querySelector('input[name="country_selection"]:checked').value;
     if(selectedCountry === 'custom') selectedCountry = document.getElementById('custom_country_input').value.trim();
 
-    const dummyDate = new Date().toISOString().split('T')[0];
+    // Generate dates to infer Days
+    const dummyDateStr = new Date().toISOString().split('T')[0];
+    let endDateStr = dummyDateStr;
+
+    if (currentDataType === 'daily') {
+        const days = parseInt(document.getElementById('days_slider').value);
+        let endDateObj = new Date();
+        endDateObj.setDate(endDateObj.getDate() + days);
+        endDateStr = endDateObj.toISOString().split('T')[0];
+    }
 
     const payload = {
         user_id: currentUser.id,
         country: selectedCountry,
-        start_date: dummyDate, 
-        end_date: dummyDate,   
+        start_date: dummyDateStr, 
+        end_date: endDateStr,   
         data_type: currentDataType,
         requested_gb: document.getElementById('gb_slider').value,
         status: 'pending'
@@ -215,7 +234,9 @@ async function requestEsim() {
     } else {
         showToast('eSIM Request sent successfully!');
         
+        // Reset UI
         document.getElementById('gb_slider').value = 5;
+        document.getElementById('days_slider').value = 7;
         document.getElementById('custom_country_input').value = "";
         const radioSelected = document.querySelector('input[name="country_selection"]:checked');
         if(radioSelected) radioSelected.checked = false;
@@ -227,8 +248,29 @@ async function requestEsim() {
 }
 
 // ==========================================
-// 6. USER VIEWS
+// 6. HELPER TO PARSE PLAN STRING
 // ==========================================
+function getPlanDescription(req) {
+    if (req.data_type === 'daily') {
+        const d1 = new Date(req.start_date);
+        const d2 = new Date(req.end_date);
+        const diffDays = Math.round(Math.abs((d2 - d1) / (1000 * 60 * 60 * 24)));
+        return `<span class="font-bold text-gray-800 text-lg">${req.requested_gb}GB</span> <span class="text-gray-500 text-xs font-semibold ml-1 uppercase tracking-wider">/ DAY FOR ${diffDays} DAYS</span>`;
+    } else {
+        return `<span class="font-bold text-gray-800 text-lg">${req.requested_gb}GB</span> <span class="text-gray-500 text-xs font-semibold ml-1 uppercase tracking-wider">(TOTAL)</span>`;
+    }
+}
+
+function getPlanDescriptionAdmin(req) {
+    if (req.data_type === 'daily') {
+        const d1 = new Date(req.start_date);
+        const d2 = new Date(req.end_date);
+        const diffDays = Math.round(Math.abs((d2 - d1) / (1000 * 60 * 60 * 24)));
+        return `${req.requested_gb}GB/day for ${diffDays} Days`;
+    } else {
+        return `${req.requested_gb}GB (Total)`;
+    }
+}
 
 function getStatusHTML(status) {
     if(status === 'pending') return `<span class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold border border-orange-200"><i class="fa-solid fa-hourglass-half mr-1"></i> PENDING</span>`;
@@ -237,6 +279,10 @@ function getStatusHTML(status) {
     if(status === 'rejected') return `<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold border border-red-200"><i class="fa-solid fa-xmark mr-1"></i> REJECTED</span>`;
     return status;
 }
+
+// ==========================================
+// 7. USER VIEWS
+// ==========================================
 
 async function loadUserRequests() {
     const { data, error } = await supabaseClient.from('esim_requests').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
@@ -260,7 +306,7 @@ async function loadUserRequests() {
         tbody.innerHTML += `
             <tr class="hover:bg-gray-50 transition border-b border-gray-50 last:border-none">
                 <td class="p-5 font-bold text-gray-800 text-base">${req.country}</td>
-                <td class="p-5"><span class="font-bold text-gray-800 text-lg">${req.requested_gb}GB</span> <span class="text-gray-500 text-xs font-semibold ml-1 uppercase tracking-wider">(${req.data_type})</span></td>
+                <td class="p-5">${getPlanDescription(req)}</td>
                 <td class="p-5">${getStatusHTML(req.status)}</td>
                 <td class="p-5">${actionHTML}</td>
             </tr>
@@ -286,14 +332,13 @@ async function loadUserBilling() {
 }
 
 // ==========================================
-// 7. ADMIN VIEWS (New Dashboard logic)
+// 8. ADMIN VIEWS
 // ==========================================
 
 async function loadAdminRequests() {
     const { data, error } = await supabaseClient.from('esim_requests').select('*, profiles(email)').order('created_at', { ascending: false });
     if (error) return;
 
-    // Calculate Stats
     let countPending = 0, countProcessing = 0, countApproved = 0;
     const tbody = document.getElementById('admin-requests-list');
     tbody.innerHTML = '';
@@ -303,10 +348,7 @@ async function loadAdminRequests() {
         if(req.status === 'processing') countProcessing++;
         if(req.status === 'approved') countApproved++;
 
-        // Only show pending and processing in the main action table to keep it clean.
-        // We will show approved/rejected as historical data or simplified rows.
         if (req.status === 'pending' || req.status === 'processing') {
-            
             let dateStr = new Date(req.created_at).toLocaleDateString();
             
             let actionArea = '';
@@ -334,7 +376,7 @@ async function loadAdminRequests() {
                     </td>
                     <td class="p-4">
                         <span class="font-black text-purple-900 text-base">${req.country}</span>
-                        <br><span class="font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded inline-block text-xs mt-1">${req.requested_gb}GB (${req.data_type})</span>
+                        <br><span class="font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded inline-block text-xs mt-1">${getPlanDescriptionAdmin(req)}</span>
                     </td>
                     <td class="p-4">${getStatusHTML(req.status)}</td>
                     <td class="p-4 min-w-[250px]">${actionArea}</td>
@@ -343,12 +385,10 @@ async function loadAdminRequests() {
         }
     });
 
-    // If no actionable items
     if(countPending === 0 && countProcessing === 0) {
         tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400 font-bold"><i class="fa-solid fa-mug-hot text-2xl mb-2 block"></i> All caught up! No pending requests.</td></tr>`;
     }
 
-    // Update Stats Display
     document.getElementById('stat-pending').innerText = countPending;
     document.getElementById('stat-processing').innerText = countProcessing;
     document.getElementById('stat-approved').innerText = countApproved;
@@ -376,12 +416,12 @@ async function approveRequest(reqId) {
 }
 
 async function loadAdminDropdown() {
-    const { data } = await supabaseClient.from('esim_requests').select('id, country, requested_gb, profiles(email)').eq('status', 'approved');
+    const { data } = await supabaseClient.from('esim_requests').select('id, country, requested_gb, data_type, start_date, end_date, profiles(email)').eq('status', 'approved');
     const select = document.getElementById('bill_request_id');
     select.innerHTML = '<option value="">Select a completed request...</option>';
     if(data) {
         data.forEach(req => {
-            select.innerHTML += `<option value="${req.id}" data-user="${req.profiles?.id}">${req.profiles?.email || 'Unknown'} — ${req.country} (${req.requested_gb}GB)</option>`;
+            select.innerHTML += `<option value="${req.id}" data-user="${req.profiles?.id}">${req.profiles?.email || 'Unknown'} — ${req.country} (${getPlanDescriptionAdmin(req)})</option>`;
         });
     }
 }
