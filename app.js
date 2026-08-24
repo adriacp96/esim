@@ -416,7 +416,7 @@ async function loadAdminHistory() {
 
     data.forEach(req => {
         const plan = getPlanInfo(req);
-        let linkHtml = req.installation_link ? `<a href="${req.installation_link}" target="_blank" class="w-8 h-8 bg-zinc-100 text-zinc-600 hover:bg-blue-100 hover:text-blue-600 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-link text-xs"></i></a>` : '';
+        let linkHtml = req.installation_link ? `<a href="${req.installation_link}" target="_blank" class="w-8 h-8 bg-zinc-100 text-zinc-600 hover:bg-blue-100 hover:text-blue-600 rounded-full flex items-center justify-center transition" title="View Link"><i class="fa-solid fa-link text-xs"></i></a>` : '';
         let costStr = req.price ? `<span class="text-green-600 font-black">${parseFloat(req.price).toFixed(2)} <span class="text-xs font-bold text-zinc-400">AED</span></span>` : '<span class="text-zinc-300">-</span>';
         
         container.innerHTML += `
@@ -430,12 +430,38 @@ async function loadAdminHistory() {
                 <div class="text-right">
                     <div class="text-base">${costStr}</div>
                 </div>
-                <div class="flex items-center gap-2 border-l border-zinc-100 pl-4 ml-2">
+                <div class="flex items-center gap-1.5 border-l border-zinc-100 pl-3 ml-2">
                     ${linkHtml}
-                    <button onclick="deleteRequest('${req.id}')" class="w-8 h-8 bg-zinc-50 text-red-400 hover:bg-red-100 hover:text-red-600 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-trash text-xs"></i></button>
+                    <button onclick="openEditModal('${req.id}', '${req.installation_link || ''}', '${req.price || 0}')" class="w-8 h-8 bg-zinc-50 text-blue-500 hover:bg-blue-100 hover:text-blue-700 rounded-full flex items-center justify-center transition" title="Edit Link & Price"><i class="fa-solid fa-pen text-xs"></i></button>
+                    <button onclick="deleteRequest('${req.id}')" class="w-8 h-8 bg-zinc-50 text-red-400 hover:bg-red-100 hover:text-red-600 rounded-full flex items-center justify-center transition" title="Delete"><i class="fa-solid fa-trash text-xs"></i></button>
                 </div>
             </div>`;
     });
+}
+
+function openEditModal(reqId, currentLink, currentPrice) {
+    const newLink = prompt("Update eSIM Link / QR URL:", currentLink);
+    if (newLink === null) return;
+    
+    const newPrice = prompt("Update Price (AED):", currentPrice);
+    if (newPrice === null) return;
+
+    updateEsimDetails(reqId, newLink, newPrice);
+}
+
+async function updateEsimDetails(reqId, link, price) {
+    const { error } = await supabaseClient.from('esim_requests').update({ 
+        installation_link: link, 
+        price: parseFloat(price) || 0,
+        status: 'approved'
+    }).eq('id', reqId);
+
+    if (error) {
+        showToast(error.message, 'error');
+    } else {
+        showToast('eSIM details updated successfully!');
+        loadAdminHistory();
+    }
 }
 
 async function loadAdminBilling() {
