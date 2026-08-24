@@ -141,56 +141,62 @@ function triggerAnimation(element) {
 }
 
 function updateSummary() {
-    // 1. Evaluate Country
-    let selectedCountry = "";
-    const radioSelected = document.querySelector('input[name="country_selection"]:checked');
-    const customDiv = document.getElementById('custom-country-div');
-    
-    if(radioSelected) {
-        if(radioSelected.value === 'custom') {
-            customDiv.classList.remove('hidden');
-            selectedCountry = document.getElementById('custom_country_input').value.trim();
+    try {
+        // 1. Evaluate Country
+        let selectedCountry = "";
+        const radioSelected = document.querySelector('input[name="country_selection"]:checked');
+        const customDiv = document.getElementById('custom-country-div');
+        
+        if(radioSelected) {
+            if(radioSelected.value === 'custom') {
+                customDiv.classList.remove('hidden');
+                selectedCountry = document.getElementById('custom_country_input').value.trim();
+            } else {
+                customDiv.classList.add('hidden');
+                selectedCountry = radioSelected.value;
+            }
         } else {
             customDiv.classList.add('hidden');
-            selectedCountry = radioSelected.value;
         }
-    }
 
-    // Update Country UI with Animation if changed
-    const sumCountry = document.getElementById('sum_country');
-    if(selectedCountry) {
-        if (sumCountry.dataset.val !== selectedCountry) {
-            sumCountry.innerHTML = `<span>${selectedCountry}</span>`;
-            sumCountry.dataset.val = selectedCountry;
-            triggerAnimation(sumCountry);
+        // Update Country UI with Animation
+        const sumCountry = document.getElementById('sum_country');
+        if(selectedCountry) {
+            if (sumCountry.dataset.val !== selectedCountry) {
+                sumCountry.innerHTML = `<span>${selectedCountry}</span>`;
+                sumCountry.dataset.val = selectedCountry;
+                triggerAnimation(sumCountry);
+            }
+        } else {
+            if (sumCountry.dataset.val !== "empty") {
+                sumCountry.innerHTML = `<span class="text-gray-500 font-normal text-lg">Select region...</span>`;
+                sumCountry.dataset.val = "empty";
+            }
         }
-    } else {
-        if (sumCountry.dataset.val !== "empty") {
-            sumCountry.innerHTML = `<span class="text-gray-500 font-normal text-lg">Select region...</span>`;
-            sumCountry.dataset.val = "empty";
+
+        // 2. Evaluate Data
+        const gbValue = document.getElementById('gb_slider').value;
+        document.getElementById('slider-val-display').innerText = gbValue;
+        
+        const typeLabel = currentDataType === 'total' ? 'Total' : '/ Day';
+        const dataString = `${gbValue} GB <span class="text-sm font-normal text-gray-400">(${typeLabel})</span>`;
+        
+        const sumData = document.getElementById('sum_data');
+        if (sumData.dataset.val !== dataString) {
+            sumData.innerHTML = dataString;
+            sumData.dataset.val = dataString;
+            triggerAnimation(sumData);
         }
-    }
 
-    // 2. Evaluate Data
-    const gbValue = document.getElementById('gb_slider').value;
-    document.getElementById('slider-val-display').innerText = gbValue;
-    
-    const typeLabel = currentDataType === 'total' ? 'Total' : '/ Day';
-    const dataString = `${gbValue} GB <span class="text-sm font-normal text-gray-400">(${typeLabel})</span>`;
-    
-    const sumData = document.getElementById('sum_data');
-    if (sumData.dataset.val !== dataString) {
-        sumData.innerHTML = dataString;
-        sumData.dataset.val = dataString;
-        triggerAnimation(sumData);
-    }
-
-    // 3. Button State
-    const btn = document.getElementById('submit_btn');
-    if (selectedCountry !== "") {
-        btn.disabled = false;
-    } else {
-        btn.disabled = true;
+        // 3. Button State (FORCE ENABLE/DISABLE)
+        const btn = document.getElementById('submit_btn');
+        if (selectedCountry !== "") {
+            btn.removeAttribute('disabled');
+        } else {
+            btn.setAttribute('disabled', 'true');
+        }
+    } catch (e) {
+        console.error("Error in updateSummary: ", e);
     }
 }
 
@@ -201,7 +207,7 @@ async function requestEsim() {
         selectedCountry = document.getElementById('custom_country_input').value.trim();
     }
 
-    // We pass the current date as dummy data for start/end to satisfy DB constraints
+    // Pass the current date as dummy data for start/end to satisfy DB constraints
     const dummyDate = new Date().toISOString().split('T')[0];
 
     const payload = {
@@ -214,10 +220,14 @@ async function requestEsim() {
         status: 'pending'
     };
 
+    // Disable button to prevent double-click
+    document.getElementById('submit_btn').setAttribute('disabled', 'true');
+
     const { error } = await supabaseClient.from('esim_requests').insert([payload]);
     
     if (error) {
         showToast(error.message, 'error');
+        document.getElementById('submit_btn').removeAttribute('disabled');
     } else {
         showToast('eSIM Request sent successfully!');
         
@@ -228,7 +238,7 @@ async function requestEsim() {
         if(radioSelected) radioSelected.checked = false;
         
         setDataType('total');
-        updateSummary();
+        updateSummary(); // This will re-disable the button since country is empty
         switchTab('my-esims-tab');
     }
 }
