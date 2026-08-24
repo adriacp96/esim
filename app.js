@@ -1,7 +1,9 @@
 // 1. Supabase Config
 const SUPABASE_URL = 'https://dvutnthqhkmqzgkihdtd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR2dXRudGhxaGttcXpna2loZHRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1MzcxOTAsImV4cCI6MjEwMzExMzE5MH0.nfcTnpmzJ8Jz9bO10Xox9T6D1UOF7fwfG-3IOtn9ceI';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// SOLUCIÓN: Cambiamos el nombre a supabaseClient para que no colisione con el CDN
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUser = null;
 let userProfile = null;
@@ -18,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Comprobar la sesión inicial al cargar la página
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabaseClient.auth.getSession().then(({ data: { session } }) => {
         if (session) {
             console.log("Sesión inicial detectada:", session.user.email);
             activarSesionUI(session);
@@ -26,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Escuchar cambios de estado (Login, Logout)
-    supabase.auth.onAuthStateChange((event, session) => {
+    supabaseClient.auth.onAuthStateChange((event, session) => {
         console.log("Cambio de estado de Auth:", event);
         if (session) {
             activarSesionUI(session);
@@ -89,7 +91,7 @@ async function login() {
     if(!email || !password) return showToast("Please fill in both fields", "error");
 
     console.log("Intentando Login...");
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
     
     if (error) {
         console.error("Login Error:", error.message);
@@ -107,7 +109,7 @@ async function register() {
     if(password.length < 6) return showToast("Password must be at least 6 characters", "error");
 
     console.log("Intentando Registro...");
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabaseClient.auth.signUp({ email, password });
     
     if (error) {
         console.error("Register Error:", error.message);
@@ -118,15 +120,15 @@ async function register() {
 }
 
 async function logout() {
-    await supabase.auth.signOut();
+    await supabaseClient.auth.signOut();
 }
 
 // 4. Role Routing
 async function checkProfileAndLoadUI() {
-    const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+    const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
     
     if (error) {
-        console.warn("No se encontró perfil (Quizás no has ejecutado el SQL todavía). Cayendo a rol 'user' por defecto.");
+        console.warn("No se encontró perfil en base de datos. Cayendo a rol 'user' por defecto.");
     }
     
     userProfile = profile || { role: 'user' }; 
@@ -155,7 +157,7 @@ async function requestEsim(e) {
         status: 'pending'
     };
 
-    const { error } = await supabase.from('esim_requests').insert([payload]);
+    const { error } = await supabaseClient.from('esim_requests').insert([payload]);
     if (error) {
         console.error("Error pidiendo esim:", error.message);
         showToast(error.message, 'error');
@@ -167,7 +169,7 @@ async function requestEsim(e) {
 }
 
 async function loadUserRequests() {
-    const { data, error } = await supabase.from('esim_requests').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+    const { data, error } = await supabaseClient.from('esim_requests').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
     if (error) return console.error(error);
 
     const tbody = document.getElementById('user-requests-list');
@@ -196,7 +198,7 @@ async function loadUserRequests() {
 
 // 6. USER: Billing View
 async function loadUserBilling() {
-    const { data, error } = await supabase.from('consumptions').select('*, esim_requests(country)').eq('user_id', currentUser.id).order('billing_month', { ascending: false });
+    const { data, error } = await supabaseClient.from('consumptions').select('*, esim_requests(country)').eq('user_id', currentUser.id).order('billing_month', { ascending: false });
     if (error) return console.error(error);
 
     const tbody = document.getElementById('user-billing-list');
@@ -215,7 +217,7 @@ async function loadUserBilling() {
 
 // 7. ADMIN: Manage Requests
 async function loadAdminRequests() {
-    const { data, error } = await supabase.from('esim_requests').select('*, profiles(email)').eq('status', 'pending').order('start_date', { ascending: true });
+    const { data, error } = await supabaseClient.from('esim_requests').select('*, profiles(email)').eq('status', 'pending').order('start_date', { ascending: true });
     if (error) return console.error(error);
 
     const tbody = document.getElementById('admin-requests-list');
@@ -242,7 +244,7 @@ async function approveRequest(reqId) {
     const linkInput = document.getElementById(`link_${reqId}`).value;
     if(!linkInput) return showToast("Provide an installation link", "error");
 
-    const { error } = await supabase.from('esim_requests').update({ status: 'approved', installation_link: linkInput }).eq('id', reqId);
+    const { error } = await supabaseClient.from('esim_requests').update({ status: 'approved', installation_link: linkInput }).eq('id', reqId);
     if (error) showToast(error.message, 'error');
     else {
         showToast("eSIM Approved!");
@@ -252,7 +254,7 @@ async function approveRequest(reqId) {
 
 // 8. ADMIN: Add Billing
 async function loadAdminDropdown() {
-    const { data } = await supabase.from('esim_requests').select('id, country, requested_gb, profiles(email)').eq('status', 'approved');
+    const { data } = await supabaseClient.from('esim_requests').select('id, country, requested_gb, profiles(email)').eq('status', 'approved');
     const select = document.getElementById('bill_request_id');
     select.innerHTML = '<option value="">Select a request...</option>';
     
@@ -267,7 +269,7 @@ async function addBillingRecord(e) {
     e.preventDefault();
     const select = document.getElementById('bill_request_id');
     
-    const { data: requestData } = await supabase.from('esim_requests').select('user_id, requested_gb').eq('id', select.value).single();
+    const { data: requestData } = await supabaseClient.from('esim_requests').select('user_id, requested_gb').eq('id', select.value).single();
 
     const payload = {
         user_id: requestData.user_id,
@@ -277,7 +279,7 @@ async function addBillingRecord(e) {
         total_due: document.getElementById('bill_cost').value
     };
 
-    const { error } = await supabase.from('consumptions').insert([payload]);
+    const { error } = await supabaseClient.from('consumptions').insert([payload]);
     if (error) showToast(error.message, 'error');
     else {
         showToast("Bill recorded successfully!");
