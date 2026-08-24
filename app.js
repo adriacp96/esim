@@ -184,8 +184,13 @@ async function requestEsim() {
 function getPlanInfo(req) {
     if (req.data_type === 'daily') {
         const diffDays = Math.round(Math.abs((new Date(req.end_date) - new Date(req.start_date)) / 86400000));
-        return { large: `${req.requested_gb}GB`, small: `/ DAY FOR ${diffDays} DAYS` };
-    } else return { large: `${req.requested_gb}`, small: 'TOTAL PLAN' };
+        // Asegúrate de que no se duplique "GB" si req.requested_gb ya lo incluye
+        const gbText = req.requested_gb.includes('GB') ? req.requested_gb : `${req.requested_gb}GB`;
+        return { large: gbText, small: `/ DAY FOR ${diffDays} DAYS` };
+    } else {
+        const gbText = req.requested_gb.includes('GB') || req.requested_gb.includes('∞') ? req.requested_gb : `${req.requested_gb} GB`;
+        return { large: gbText, small: 'TOTAL PLAN' };
+    }
 }
 
 function hashCode(str) { let hash = 0; for (let i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); } return hash; }
