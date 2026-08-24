@@ -132,8 +132,18 @@
     <div id="auth-view" class="w-full h-full min-h-screen flex items-center justify-center bg-zinc-100 absolute z-40 p-4">
         <div class="bg-white p-8 md:p-10 rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] w-full max-w-md animate-slide-up border border-white">
             <div class="text-center mb-8">
-                <div class="w-20 h-20 bg-black text-white rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl transform rotate-3">
-                    <i class="fa-solid fa-sim-card text-4xl"></i>
+                <!-- Replaced eSIM icon with rosty.mov video element -->
+                <div class="w-20 h-20 bg-black text-white rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl transform rotate-3 overflow-hidden select-none pointer-events-none">
+                    <video 
+                        id="rosty-video" 
+                        src="rosty.mov" 
+                        muted 
+                        playsinline 
+                        class="w-full h-full object-cover pointer-events-none select-none" 
+                        controlsList="nodownload" 
+                        disablePictureInPicture 
+                        oncontextmenu="return false;"
+                    ></video>
                 </div>
                 <h2 class="text-3xl font-black tracking-tight text-zinc-900">eSIM App</h2>
                 <p class="text-sm text-zinc-500 font-medium mt-1">Connect anywhere in seconds.</p>
@@ -926,6 +936,61 @@
 
             updateTotalSlider(slider.value);
         };
+
+        // Custom Script for rosty.mov loop (aft fwd fwd aft) with interaction/download protection
+        document.addEventListener('DOMContentLoaded', () => {
+            const video = document.getElementById('rosty-video');
+            if (!video) return;
+
+            video.addEventListener('contextmenu', (e) => e.preventDefault());
+            video.addEventListener('dragstart', (e) => e.preventDefault());
+
+            const sequence = ['aft', 'fwd', 'fwd', 'aft'];
+            let seqIndex = 0;
+            let reversingInterval = null;
+
+            function playSequence() {
+                if (!video) return;
+                const currentMode = sequence[seqIndex];
+
+                if (reversingInterval) {
+                    clearInterval(reversingInterval);
+                    reversingInterval = null;
+                }
+
+                if (currentMode === 'fwd') {
+                    video.playbackRate = 1.0;
+                    video.currentTime = 0;
+                    video.play().catch(() => {});
+                    
+                    video.onended = () => {
+                        advanceSequence();
+                    };
+                } else {
+                    video.pause();
+                    video.currentTime = video.duration || 1;
+                    
+                    reversingInterval = setInterval(() => {
+                        if (video.currentTime <= 0.1) {
+                            clearInterval(reversingInterval);
+                            reversingInterval = null;
+                            advanceSequence();
+                        } else {
+                            video.currentTime -= 0.05;
+                        }
+                    }, 30);
+                }
+            }
+
+            function advanceSequence() {
+                seqIndex = (seqIndex + 1) % sequence.length;
+                playSequence();
+            }
+
+            video.addEventListener('loadedmetadata', () => {
+                playSequence();
+            });
+        });
 
     </script>
 
