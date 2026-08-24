@@ -1,4 +1,4 @@
-// 1. Supabase Config (WITH YOUR CREDENTIALS)
+// 1. Supabase Config
 const SUPABASE_URL = 'https://dvutnthqhkmqzgkihdtd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR2dXRudGhxaGttcXpna2loZHRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1MzcxOTAsImV4cCI6MjEwMzExMzE5MH0.nfcTnpmzJ8Jz9bO10Xox9T6D1UOF7fwfG-3IOtn9ceI';
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -8,7 +8,7 @@ let userProfile = null;
 
 // 2. Initialization & Router
 document.addEventListener('DOMContentLoaded', () => {
-    // Set min date for requests
+    // Configurar fechas mínimas
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const minDate = tomorrow.toISOString().split('T')[0];
@@ -17,29 +17,48 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('end_date').min = minDate;
     }
 
-    // Auth State Listener
-    supabase.auth.onAuthStateChange((event, session) => {
+    // Comprobar la sesión inicial al cargar la página
+    supabase.auth.getSession().then(({ data: { session } }) => {
         if (session) {
-            currentUser = session.user;
-            document.getElementById('user-display-email').innerText = currentUser.email;
-            document.getElementById('auth-view').classList.add('hidden');
-            document.getElementById('app-layout').classList.remove('hidden');
-            checkProfileAndLoadUI();
+            console.log("Sesión inicial detectada:", session.user.email);
+            activarSesionUI(session);
+        }
+    });
+
+    // Escuchar cambios de estado (Login, Logout)
+    supabase.auth.onAuthStateChange((event, session) => {
+        console.log("Cambio de estado de Auth:", event);
+        if (session) {
+            activarSesionUI(session);
         } else {
-            currentUser = null;
-            userProfile = null;
-            document.getElementById('auth-view').classList.remove('hidden');
-            document.getElementById('app-layout').classList.add('hidden');
+            desactivarSesionUI();
         }
     });
 });
+
+// Función centralizada para mostrar la UI cuando hay sesión
+function activarSesionUI(session) {
+    currentUser = session.user;
+    document.getElementById('user-display-email').innerText = currentUser.email;
+    document.getElementById('auth-view').classList.add('hidden');
+    document.getElementById('app-layout').classList.remove('hidden');
+    checkProfileAndLoadUI();
+}
+
+// Función centralizada para ocultar la UI al cerrar sesión
+function desactivarSesionUI() {
+    currentUser = null;
+    userProfile = null;
+    document.getElementById('auth-view').classList.remove('hidden');
+    document.getElementById('app-layout').classList.add('hidden');
+}
 
 // Toast Notifications
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
-    const color = type === 'error' ? 'bg-red-500' : 'bg-green-500';
-    toast.className = `${color} text-white px-6 py-3 rounded shadow-lg transform transition-all duration-300 translate-x-full`;
+    const color = type === 'error' ? 'bg-red-600' : 'bg-green-600';
+    toast.className = `${color} text-white px-6 py-4 rounded-lg shadow-xl transform transition-all duration-300 translate-x-full border-2 border-white font-bold`;
     toast.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'} mr-2"></i> ${message}`;
     
     container.appendChild(toast);
@@ -48,7 +67,7 @@ function showToast(message, type = 'success') {
     setTimeout(() => {
         toast.classList.add('translate-x-full');
         setTimeout(() => toast.remove(), 300);
-    }, 4000);
+    }, 5000); // 5 segundos de mensaje
 }
 
 // Tab Management
@@ -66,16 +85,36 @@ function switchTab(tabId) {
 async function login() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) showToast(error.message, 'error');
+    
+    if(!email || !password) return showToast("Please fill in both fields", "error");
+
+    console.log("Intentando Login...");
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    
+    if (error) {
+        console.error("Login Error:", error.message);
+        showToast(error.message, 'error');
+    } else {
+        showToast("Login successful!");
+    }
 }
 
 async function register() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) showToast(error.message, 'error');
-    else showToast('Registration successful! Please login.');
+    
+    if(!email || !password) return showToast("Please fill in both fields", "error");
+    if(password.length < 6) return showToast("Password must be at least 6 characters", "error");
+
+    console.log("Intentando Registro...");
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    
+    if (error) {
+        console.error("Register Error:", error.message);
+        showToast(error.message, 'error');
+    } else {
+        showToast('Registration successful! Logging you in...');
+    }
 }
 
 async function logout() {
@@ -84,7 +123,12 @@ async function logout() {
 
 // 4. Role Routing
 async function checkProfileAndLoadUI() {
-    const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+    const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+    
+    if (error) {
+        console.warn("No se encontró perfil (Quizás no has ejecutado el SQL todavía). Cayendo a rol 'user' por defecto.");
+    }
+    
     userProfile = profile || { role: 'user' }; 
 
     if (userProfile.role === 'admin') {
@@ -112,8 +156,10 @@ async function requestEsim(e) {
     };
 
     const { error } = await supabase.from('esim_requests').insert([payload]);
-    if (error) showToast(error.message, 'error');
-    else {
+    if (error) {
+        console.error("Error pidiendo esim:", error.message);
+        showToast(error.message, 'error');
+    } else {
         showToast('Request sent successfully!');
         document.getElementById('esim-form').reset();
         switchTab('my-esims-tab');
@@ -122,7 +168,7 @@ async function requestEsim(e) {
 
 async function loadUserRequests() {
     const { data, error } = await supabase.from('esim_requests').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-    if (error) return;
+    if (error) return console.error(error);
 
     const tbody = document.getElementById('user-requests-list');
     tbody.innerHTML = '';
@@ -151,7 +197,7 @@ async function loadUserRequests() {
 // 6. USER: Billing View
 async function loadUserBilling() {
     const { data, error } = await supabase.from('consumptions').select('*, esim_requests(country)').eq('user_id', currentUser.id).order('billing_month', { ascending: false });
-    if (error) return;
+    if (error) return console.error(error);
 
     const tbody = document.getElementById('user-billing-list');
     tbody.innerHTML = '';
@@ -170,7 +216,7 @@ async function loadUserBilling() {
 // 7. ADMIN: Manage Requests
 async function loadAdminRequests() {
     const { data, error } = await supabase.from('esim_requests').select('*, profiles(email)').eq('status', 'pending').order('start_date', { ascending: true });
-    if (error) return;
+    if (error) return console.error(error);
 
     const tbody = document.getElementById('admin-requests-list');
     tbody.innerHTML = '';
@@ -178,7 +224,7 @@ async function loadAdminRequests() {
     data.forEach(req => {
         tbody.innerHTML += `
             <tr class="hover:bg-gray-50">
-                <td class="p-4 font-medium text-gray-800">${req.profiles.email}</td>
+                <td class="p-4 font-medium text-gray-800">${req.profiles?.email || 'Unknown'}</td>
                 <td class="p-4 font-bold">${req.country}</td>
                 <td class="p-4 text-gray-600">${req.start_date} to ${req.end_date} <br> <span class="text-xs font-bold">${req.requested_gb}GB (${req.data_type})</span></td>
                 <td class="p-4">
@@ -206,14 +252,13 @@ async function approveRequest(reqId) {
 
 // 8. ADMIN: Add Billing
 async function loadAdminDropdown() {
-    // Load approved requests to attach bills to them
     const { data } = await supabase.from('esim_requests').select('id, country, requested_gb, profiles(email)').eq('status', 'approved');
     const select = document.getElementById('bill_request_id');
     select.innerHTML = '<option value="">Select a request...</option>';
     
     if(data) {
         data.forEach(req => {
-            select.innerHTML += `<option value="${req.id}" data-user="${req.profiles.id}">${req.profiles.email} - ${req.country} (${req.requested_gb}GB)</option>`;
+            select.innerHTML += `<option value="${req.id}" data-user="${req.profiles?.id}">${req.profiles?.email || 'Unknown'} - ${req.country} (${req.requested_gb}GB)</option>`;
         });
     }
 }
@@ -221,9 +266,7 @@ async function loadAdminDropdown() {
 async function addBillingRecord(e) {
     e.preventDefault();
     const select = document.getElementById('bill_request_id');
-    const selectedOption = select.options[select.selectedIndex];
     
-    // We need the user_id of the person who made the request
     const { data: requestData } = await supabase.from('esim_requests').select('user_id, requested_gb').eq('id', select.value).single();
 
     const payload = {
