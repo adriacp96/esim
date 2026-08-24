@@ -132,15 +132,20 @@
     <div id="auth-view" class="w-full h-full min-h-screen flex items-center justify-center bg-zinc-100 absolute z-40 p-4">
         <div class="bg-white p-8 md:p-10 rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] w-full max-w-md animate-slide-up border border-white">
             <div class="text-center mb-8">
-                <!-- Doubled size to w-40 h-40, plain/straight with no box, outline, or shadow -->
-                <div class="w-40 h-40 mx-auto mb-4 select-none pointer-events-none relative">
+                <!-- Contenedor con rostybw.png al frente absoluto y fundido al cargar el video -->
+                <div class="w-40 h-40 mx-auto mb-4 select-none pointer-events-none relative overflow-hidden">
+                    <img 
+                        id="rosty-poster" 
+                        src="rostybw.png" 
+                        class="absolute inset-0 w-full h-full object-cover z-10 transition-opacity duration-700 select-none pointer-events-none" 
+                        alt="Rosty"
+                    />
                     <video 
                         id="rosty-video" 
                         src="rosty.mov" 
-                        poster="rostybw.png"
                         muted 
                         playsinline 
-                        class="w-full h-full object-cover pointer-events-none select-none opacity-0 transition-opacity duration-700" 
+                        class="absolute inset-0 w-full h-full object-cover pointer-events-none select-none z-0" 
                         controlsList="nodownload" 
                         disablePictureInPicture 
                         oncontextmenu="return false;"
@@ -938,10 +943,11 @@
             updateTotalSlider(slider.value);
         };
 
-        // Custom Script for rosty.mov loop (aft fwd fwd aft) at normal speed with poster fallback and fade-in
+        // Custom Script for rosty.mov loop (aft fwd fwd aft) with poster image overlay & fade-in transition
         document.addEventListener('DOMContentLoaded', () => {
             const video = document.getElementById('rosty-video');
-            if (!video) return;
+            const poster = document.getElementById('rosty-poster');
+            if (!video || !poster) return;
 
             video.addEventListener('contextmenu', (e) => e.preventDefault());
             video.addEventListener('dragstart', (e) => e.preventDefault());
@@ -977,7 +983,6 @@
                             reversingInterval = null;
                             advanceSequence();
                         } else {
-                            // Normal matching speed for reverse playback
                             video.currentTime -= 0.15;
                         }
                     }, 20);
@@ -990,7 +995,8 @@
             }
 
             video.addEventListener('loadeddata', () => {
-                video.classList.remove('opacity-0');
+                // Fade out the poster image to reveal the video smoothly
+                poster.classList.add('opacity-0');
                 playSequence();
             });
         });
