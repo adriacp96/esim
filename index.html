@@ -178,7 +178,7 @@
                                     <div class="text-3xl md:text-4xl font-black tracking-tighter text-black" id="slider-val-display">1 GB</div>
                                     <div class="text-zinc-400 font-bold mb-1 text-sm"><span id="slider-type-display" class="text-[10px] uppercase tracking-widest">total plan</span></div>
                                 </div>
-                                <input type="range" id="gb_slider" min="1" max="12" step="1" value="2" class="slider-black" oninput="updateTotalSlider(this.value)">
+                                <input type="range" id="gb_slider" min="1" max="52" step="1" value="2" class="slider-black" oninput="updateTotalSlider(this.value)">
                                 
                                 <div id="total_terms_box" class="mt-4 bg-zinc-50 border border-zinc-200/80 rounded-xl p-3 text-[11px] text-zinc-700 space-y-1.5 font-medium animate-slide-up">
                                     <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-black mt-0.5"></i> Total data is valid for 24-hour after activation in the coverage area.</p>
@@ -321,9 +321,9 @@
     <script>
         function getGbLabel(val) {
             let num = parseInt(val);
-            if (num === 12) return "∞";
+            if (num === 52) return "∞";
             if (num === 1) return "0.5 GB";
-            return `${num - 1} GB`; 
+            return `${num - 1} GB`; // Index 2 = 1 GB, Index 3 = 2 GB, ..., Index 51 = 50 GB
         }
 
         function updateTotalSlider(val) {
@@ -393,8 +393,8 @@
             const totalTermsBox = document.getElementById('total_terms_box');
             
             if(type === 'total') {
-                slider.max = "12";
-                slider.value = "2"; // default to 1 GB
+                slider.max = "52";
+                slider.value = "3"; // default to 2 GB
                 if(totalTermsBox) totalTermsBox.classList.remove('hidden');
             } else {
                 slider.max = "10";
