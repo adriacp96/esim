@@ -1,4 +1,3 @@
-// 1. Supabase Config
 const SUPABASE_URL = 'https://dvutnthqhkmqzgkihdtd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR2dXRudGhxaGttcXpna2loZHRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1MzcxOTAsImV4cCI6MjEwMzExMzE5MH0.nfcTnpmzJ8Jz9bO10Xox9T6D1UOF7fwfG-3IOtn9ceI';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -7,7 +6,6 @@ let currentUser = null;
 let userProfile = null;
 let currentDataType = 'total'; 
 
-// Colors for eSIM cards based on regions
 const bgColors = [
     'from-blue-600 to-indigo-900', 'from-rose-500 to-red-800', 
     'from-emerald-500 to-teal-900', 'from-amber-500 to-orange-800',
@@ -50,9 +48,7 @@ function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
     document.getElementById(tabId).classList.remove('hidden');
     
-    // Highlight Desktop Nav
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('bg-zinc-800', 'text-white'));
-    // Highlight Mobile Nav
     document.querySelectorAll('.mob-nav-btn').forEach(btn => {
         btn.classList.remove('text-white', 'bg-white/10');
         btn.classList.add('text-zinc-400');
@@ -128,7 +124,6 @@ async function checkProfileAndLoadUI() {
     }
 }
 
-// 5. VISUAL SELECTOR
 function setDataType(type) {
     currentDataType = type;
     const slider = document.getElementById('gb_slider');
@@ -137,14 +132,14 @@ function setDataType(type) {
     const daysContainer = document.getElementById('days_container');
     
     if(type === 'total') {
-        btnTotal.className = "flex-1 py-3 text-sm font-bold rounded-xl bg-white shadow text-black transition-all";
-        btnDaily.className = "flex-1 py-3 text-sm font-bold rounded-xl text-zinc-500 transition-all bg-transparent";
+        btnTotal.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white shadow text-black transition-all";
+        btnDaily.className = "flex-1 py-2 text-xs font-bold rounded-lg text-zinc-500 transition-all bg-transparent";
         document.getElementById('slider-type-display').innerText = "total";
         slider.max = "50"; slider.classList.remove('slider-orange'); slider.classList.add('slider-black');
         daysContainer.classList.add('hidden'); 
     } else {
-        btnDaily.className = "flex-1 py-3 text-sm font-bold rounded-xl bg-white shadow text-black transition-all";
-        btnTotal.className = "flex-1 py-3 text-sm font-bold rounded-xl text-zinc-500 transition-all bg-transparent";
+        btnDaily.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white shadow text-black transition-all";
+        btnTotal.className = "flex-1 py-2 text-xs font-bold rounded-lg text-zinc-500 transition-all bg-transparent";
         document.getElementById('slider-type-display').innerText = "/ day";
         slider.max = "10"; slider.classList.add('slider-orange'); slider.classList.remove('slider-black');
         daysContainer.classList.remove('hidden'); 
@@ -258,7 +253,6 @@ async function requestEsim() {
     }
 }
 
-// 6. CARD RENDERING HELPERS
 function getPlanInfo(req) {
     if (req.data_type === 'daily') {
         const diffDays = Math.round(Math.abs((new Date(req.end_date) - new Date(req.start_date)) / 86400000));
@@ -268,7 +262,6 @@ function getPlanInfo(req) {
 
 function hashCode(str) { let hash = 0; for (let i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); } return hash; }
 
-// 7. USER VIEWS (Digital Cards)
 async function loadUserRequests() {
     const { data, error } = await supabaseClient.from('esim_requests').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
     if (error) return;
@@ -359,7 +352,6 @@ async function loadUserBilling() {
     });
 }
 
-// 8. ADMIN VIEWS
 async function loadAdminRequests() {
     const { data, error } = await supabaseClient.from('esim_requests').select('*, profiles(email)').order('created_at', { ascending: false });
     if (error) return;
@@ -426,7 +418,6 @@ async function loadAdminHistory() {
 
     data.forEach(req => {
         const plan = getPlanInfo(req);
-        let statusColor = req.status === 'approved' ? 'text-green-500' : req.status === 'rejected' ? 'text-red-500' : 'text-orange-500';
         let linkHtml = req.installation_link ? `<a href="${req.installation_link}" target="_blank" class="w-8 h-8 bg-zinc-100 text-zinc-600 hover:bg-blue-100 hover:text-blue-600 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-link text-xs"></i></a>` : '';
         let costStr = req.price ? `<span class="text-green-600 font-black">${parseFloat(req.price).toFixed(2)}</span>` : '<span class="text-zinc-300">-</span>';
         
@@ -495,7 +486,6 @@ async function loadAdminBilling() {
     });
 }
 
-// 9. API CALLS
 async function changeStatus(reqId, newStatus) {
     const { error } = await supabaseClient.from('esim_requests').update({ status: newStatus }).eq('id', reqId);
     if (error) showToast(error.message, 'error');
