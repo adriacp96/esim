@@ -303,17 +303,17 @@
 
         </main>
 
-        <!-- Compacted, shadow-free mobile menu bar -->
-        <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-3 left-1/2 -translate-x-1/2 w-[85%] max-w-xs glass-dark rounded-full flex justify-around items-center z-50 py-1.5 px-3 border border-white/10">
-            <div id="mob-user-nav" class="w-full flex justify-between hidden">
-                <button onclick="switchTab('request-tab')" class="mob-nav-btn relative w-1/3 py-1.5 text-zinc-400 flex flex-col items-center rounded-xl transition-all"><i class="fa-solid fa-plus text-sm mb-0.5"></i><span class="text-[8px] font-bold uppercase tracking-widest">New</span></button>
-                <button onclick="switchTab('my-esims-tab')" class="mob-nav-btn relative w-1/3 py-1.5 text-zinc-400 flex flex-col items-center rounded-xl transition-all"><i class="fa-solid fa-wallet text-sm mb-0.5"></i><span class="text-[8px] font-bold uppercase tracking-widest">eSIM</span></button>
-                <button onclick="switchTab('billing-tab')" class="mob-nav-btn relative w-1/3 py-1.5 text-zinc-400 flex flex-col items-center rounded-xl transition-all"><i class="fa-solid fa-receipt text-sm mb-0.5"></i><span class="text-[8px] font-bold uppercase tracking-widest">Bills</span></button>
+        <!-- Mobile menu bar sized precisely like a mobile Safari search bar (compact pill width/height) -->
+        <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-3 left-1/2 -translate-x-1/2 w-[72%] max-w-[280px] h-[46px] glass-dark rounded-full flex justify-around items-center z-50 px-2 border border-white/10">
+            <div id="mob-user-nav" class="w-full flex justify-between px-1 hidden">
+                <button onclick="switchTab('request-tab')" class="mob-nav-btn relative w-1/3 py-1 text-zinc-400 flex flex-col items-center rounded-xl transition-all"><i class="fa-solid fa-plus text-xs"></i><span class="text-[7px] font-bold uppercase tracking-widest mt-0.5">New</span></button>
+                <button onclick="switchTab('my-esims-tab')" class="mob-nav-btn relative w-1/3 py-1 text-zinc-400 flex flex-col items-center rounded-xl transition-all"><i class="fa-solid fa-wallet text-xs"></i><span class="text-[7px] font-bold uppercase tracking-widest mt-0.5">eSIM</span></button>
+                <button onclick="switchTab('billing-tab')" class="mob-nav-btn relative w-1/3 py-1 text-zinc-400 flex flex-col items-center rounded-xl transition-all"><i class="fa-solid fa-receipt text-xs"></i><span class="text-[7px] font-bold uppercase tracking-widest mt-0.5">Bills</span></button>
             </div>
-            <div id="mob-admin-nav" class="w-full flex justify-between hidden">
-                <button onclick="switchTab('admin-requests-tab')" class="mob-nav-btn relative w-1/3 py-1.5 text-zinc-400 flex flex-col items-center rounded-xl transition-all"><i class="fa-solid fa-inbox text-sm mb-0.5"></i><span class="text-[8px] font-bold uppercase tracking-widest">Inbox</span></button>
-                <button onclick="switchTab('admin-history-tab')" class="mob-nav-btn relative w-1/3 py-1.5 text-zinc-400 flex flex-col items-center rounded-xl transition-all"><i class="fa-solid fa-database text-sm mb-0.5"></i><span class="text-[8px] font-bold uppercase tracking-widest">Data</span></button>
-                <button onclick="switchTab('admin-billing-tab')" class="mob-nav-btn relative w-1/3 py-1.5 text-zinc-400 flex flex-col items-center rounded-xl transition-all"><i class="fa-solid fa-chart-line text-sm mb-0.5"></i><span class="text-[8px] font-bold uppercase tracking-widest">Rev</span></button>
+            <div id="mob-admin-nav" class="w-full flex justify-between px-1 hidden">
+                <button onclick="switchTab('admin-requests-tab')" class="mob-nav-btn relative w-1/3 py-1 text-zinc-400 flex flex-col items-center rounded-xl transition-all"><i class="fa-solid fa-inbox text-xs"></i><span class="text-[7px] font-bold uppercase tracking-widest mt-0.5">Inbox</span></button>
+                <button onclick="switchTab('admin-history-tab')" class="mob-nav-btn relative w-1/3 py-1 text-zinc-400 flex flex-col items-center rounded-xl transition-all"><i class="fa-solid fa-database text-xs"></i><span class="text-[7px] font-bold uppercase tracking-widest mt-0.5">Data</span></button>
+                <button onclick="switchTab('admin-billing-tab')" class="mob-nav-btn relative w-1/3 py-1 text-zinc-400 flex flex-col items-center rounded-xl transition-all"><i class="fa-solid fa-chart-line text-xs"></i><span class="text-[7px] font-bold uppercase tracking-widest mt-0.5">Rev</span></button>
             </div>
         </nav>
 
