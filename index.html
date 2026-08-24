@@ -178,7 +178,7 @@
                                     <div class="text-3xl md:text-4xl font-black tracking-tighter text-black" id="slider-val-display">1 GB</div>
                                     <div class="text-zinc-400 font-bold mb-1 text-sm"><span id="slider-type-display" class="text-[10px] uppercase tracking-widest">total plan</span></div>
                                 </div>
-                                <input type="range" id="gb_slider" min="1" max="12" step="1" value="2" class="slider-black" oninput="updateTotalSlider(this.value)">
+                                <input type="range" id="gb_slider" min="1" max="12" step="1" value="2" class="slider-black" oninput="onSliderChange()">
                                 
                                 <div id="total_terms_box" class="mt-4 bg-zinc-50 border border-zinc-200/80 rounded-xl p-3 text-[11px] text-zinc-700 space-y-1.5 font-medium animate-slide-up">
                                     <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-black mt-0.5"></i> Total data is valid for 24-hour after activation in the coverage area.</p>
@@ -321,15 +321,24 @@
     <script>
         function getGbLabel(val) {
             let num = parseInt(val);
-            if (num === 12) return "∞"; // Step 12 = Unlimited symbol
-            if (num === 1) return "0.5 GB"; // Step 1 = 0.5 GB
-            return `${num - 1} GB`; // Steps 2 to 11 = 1 GB through 10 GB
+            if (currentDataType === 'total') {
+                if (num === 12) return "∞"; // Step 12 = Unlimited
+                if (num === 1) return "0.5 GB"; // Step 1 = 0.5 GB
+                return `${num - 1} GB`; // Steps 2 to 11 = 1 GB through 10 GB
+            } else {
+                return `${num} GB`;
+            }
         }
 
         function updateTotalSlider(val) {
             const label = getGbLabel(val);
             document.getElementById('slider-val-display').innerText = label;
             updateSummary();
+        }
+
+        function onSliderChange() {
+            const val = document.getElementById('gb_slider').value;
+            updateTotalSlider(val);
         }
 
         const originalUpdateSummary = window.updateSummary;
@@ -367,7 +376,8 @@
             } else {
                 const daysValue = document.getElementById('days_slider').value;
                 document.getElementById('days-val-display').innerText = daysValue;
-                document.getElementById('term_gb_display').innerText = gbLabel;
+                const termDisplay = document.getElementById('term_gb_display');
+                if(termDisplay) termDisplay.innerText = gbLabel;
                 dataStringDesktop = `${gbLabel}/DAY <span class="text-xs font-bold text-zinc-500 tracking-widest uppercase ml-1">for ${daysValue}d</span>`;
                 dataStringMobile = `${gbLabel}/DAY (${daysValue}d)`;
             }
@@ -388,17 +398,31 @@
 
         const originalSetDataType = window.setDataType;
         window.setDataType = function(type) {
-            if(typeof originalSetDataType === 'function') originalSetDataType(type);
+            currentDataType = type;
             const slider = document.getElementById('gb_slider');
+            const btnTotal = document.getElementById('btn_type_total');
+            const btnDaily = document.getElementById('btn_type_daily');
+            const daysContainer = document.getElementById('days_container');
             const totalTermsBox = document.getElementById('total_terms_box');
+            const sliderTypeDisplay = document.getElementById('slider-type-display');
             
             if(type === 'total') {
+                btnTotal.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white shadow text-black transition-all";
+                btnDaily.className = "flex-1 py-2 text-xs font-bold rounded-lg text-zinc-500 transition-all bg-transparent";
+                sliderTypeDisplay.innerText = "total plan";
                 slider.max = "12"; // 12 steps: 0.5GB, 1GB-10GB, Unlimited
                 slider.value = "2"; // default to 1 GB
+                slider.classList.remove('slider-orange'); slider.classList.add('slider-black');
+                if(daysContainer) daysContainer.classList.add('hidden');
                 if(totalTermsBox) totalTermsBox.classList.remove('hidden');
             } else {
-                slider.max = "10";
-                slider.value = "2"; // default to 1 GB/day
+                btnDaily.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white shadow text-black transition-all";
+                btnTotal.className = "flex-1 py-2 text-xs font-bold rounded-lg text-zinc-500 transition-all bg-transparent";
+                sliderTypeDisplay.innerText = "/ day";
+                slider.max = "10"; // 1 to 10 GB per day
+                slider.value = "2"; // default to 2 GB/day
+                slider.classList.add('slider-orange'); slider.classList.remove('slider-black');
+                if(daysContainer) daysContainer.classList.remove('hidden');
                 if(totalTermsBox) totalTermsBox.classList.add('hidden');
             }
             updateTotalSlider(slider.value);
