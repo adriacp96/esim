@@ -6,12 +6,10 @@
 
     <title>eSIM App</title>
 
-    <!-- App / Browser Icons -->
     <link rel="icon" type="image/png" href="esimicon.png">
     <link rel="apple-touch-icon" href="esimapp.png">
     <link rel="apple-touch-icon-precomposed" href="esimapp.png">
 
-    <!-- iOS Home Screen -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="eSIM App">
@@ -122,6 +120,16 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+
+        video.login-video {
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            outline: none;
+            border: none;
+            box-shadow: none;
+        }
     </style>
 </head>
 
@@ -132,8 +140,8 @@
     <div id="auth-view" class="w-full h-full min-h-screen flex items-center justify-center bg-zinc-100 absolute z-40 p-4">
         <div class="bg-white p-8 md:p-10 rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] w-full max-w-md animate-slide-up border border-white">
             <div class="text-center mb-8">
-                <div class="w-20 h-20 bg-black text-white rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl transform rotate-3">
-                    <i class="fa-solid fa-sim-card text-4xl"></i>
+                <div class="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-4 overflow-hidden bg-transparent shadow-none border-0 p-0">
+                    <video src="rosty.mov" autoplay muted playsinline class="login-video w-full h-full object-cover" id="pingpong-video"></video>
                 </div>
                 <h2 class="text-3xl font-black tracking-tight text-zinc-900">eSIM App</h2>
                 <p class="text-sm text-zinc-500 font-medium mt-1">Connect anywhere in seconds.</p>
@@ -727,6 +735,33 @@
     </div>
 
     <script>
+        const pingpongVideo = document.getElementById('pingpong-video');
+        if (pingpongVideo) {
+            let forward = true;
+            pingpongVideo.addEventListener('ended', () => {
+                forward = !forward;
+            });
+            pingpongVideo.addEventListener('timeupdate', () => {
+                if (forward) {
+                    if (pingpongVideo.ended) {
+                        forward = false;
+                        pingpongVideo.playbackRate = -1;
+                        pingpongVideo.play();
+                    }
+                } else {
+                    if (pingpongVideo.currentTime <= 0.05) {
+                        forward = true;
+                        pingpongVideo.playbackRate = 1;
+                        pingpongVideo.play();
+                    }
+                }
+            });
+            pingpongVideo.addEventListener('play', () => {
+                if (!forward && pingpongVideo.playbackRate > 0) {
+                    pingpongVideo.playbackRate = -1;
+                }
+            });
+        }
 
         function getGbLabel(val) {
             let num = parseInt(val);
@@ -750,8 +785,6 @@
             const val = document.getElementById('gb_slider').value;
             updateTotalSlider(val);
         }
-
-        const originalUpdateSummary = window.updateSummary;
 
         window.updateSummary = function() {
 
@@ -860,8 +893,6 @@
             }
 
         };
-
-        const originalSetDataType = window.setDataType;
 
         window.setDataType = function(type) {
 
