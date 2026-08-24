@@ -393,7 +393,7 @@
             const totalTermsBox = document.getElementById('total_terms_box');
             
             if(type === 'total') {
-                slider.max = "12"; // 1 to 12 steps (0.5GB, 1GB-10GB, Unlimited)
+                slider.max = "12"; // 12 steps: 0.5GB, 1GB-10GB, Unlimited
                 slider.value = "2"; // default to 1 GB
                 if(totalTermsBox) totalTermsBox.classList.remove('hidden');
             } else {
