@@ -7,14 +7,17 @@ let currentUser = null;
 let userProfile = null;
 let currentDataType = 'total'; 
 
-// 2. Initialization
+// Colors for eSIM cards based on regions
+const bgColors = [
+    'from-blue-600 to-indigo-900', 'from-rose-500 to-red-800', 
+    'from-emerald-500 to-teal-900', 'from-amber-500 to-orange-800',
+    'from-violet-600 to-fuchsia-900', 'from-cyan-500 to-blue-800'
+];
+
 document.addEventListener('DOMContentLoaded', () => {
-    supabaseClient.auth.getSession().then(({ data: { session } }) => {
-        if (session) activarSesionUI(session);
-    });
+    supabaseClient.auth.getSession().then(({ data: { session } }) => { if (session) activarSesionUI(session); });
     supabaseClient.auth.onAuthStateChange((event, session) => {
-        if (session) activarSesionUI(session);
-        else desactivarSesionUI();
+        if (session) activarSesionUI(session); else desactivarSesionUI();
     });
 });
 
@@ -35,9 +38,9 @@ function desactivarSesionUI() {
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
-    const color = type === 'error' ? 'bg-red-600' : 'bg-green-600';
-    toast.className = `${color} text-white px-5 py-3 rounded-2xl shadow-xl transform transition-all translate-x-full font-bold flex items-center text-sm md:text-base`;
-    toast.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'} mr-3 text-lg"></i> <span>${message}</span>`;
+    const isErr = type === 'error';
+    toast.className = `glass ${isErr ? 'text-red-600 border-red-200' : 'text-zinc-900 border-white'} border px-5 py-4 rounded-2xl shadow-2xl transform transition-all translate-x-full font-bold flex items-center text-sm md:text-base`;
+    toast.innerHTML = `<i class="fa-solid ${isErr ? 'fa-circle-exclamation' : 'fa-check-circle text-green-500'} mr-3 text-xl"></i> <span>${message}</span>`;
     container.appendChild(toast);
     setTimeout(() => toast.classList.remove('translate-x-full'), 10);
     setTimeout(() => { toast.classList.add('translate-x-full'); setTimeout(() => toast.remove(), 300); }, 3000);
@@ -47,23 +50,24 @@ function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
     document.getElementById(tabId).classList.remove('hidden');
     
-    // Highlight Nav Buttons (Desktop & Mobile)
-    document.querySelectorAll('.nav-btn, .mob-nav-btn').forEach(btn => {
-        btn.classList.remove('text-blue-600', 'text-purple-700', 'bg-gray-800');
-        if(btn.classList.contains('mob-nav-btn')) btn.classList.add('text-gray-400');
+    // Highlight Desktop Nav
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('bg-zinc-800', 'text-white'));
+    // Highlight Mobile Nav
+    document.querySelectorAll('.mob-nav-btn').forEach(btn => {
+        btn.classList.remove('text-white', 'bg-white/10');
+        btn.classList.add('text-zinc-400');
     });
 
     if(event && event.currentTarget) {
         const btn = event.currentTarget;
         if(btn.classList.contains('mob-nav-btn')) {
-            let color = userProfile.role === 'admin' ? 'text-purple-700' : 'text-blue-600';
-            btn.classList.replace('text-gray-400', color);
+            btn.classList.replace('text-zinc-400', 'text-white');
+            btn.classList.add('bg-white/10');
         } else {
-            btn.classList.add('bg-gray-800');
+            btn.classList.add('bg-zinc-800', 'text-white');
         }
     }
 
-    // Toggle Sticky Mobile Summary
     if (tabId === 'request-tab') document.getElementById('mobile-summary').classList.remove('hidden');
     else document.getElementById('mobile-summary').classList.add('hidden');
 
@@ -74,7 +78,6 @@ function switchTab(tabId) {
     if (tabId === 'admin-billing-tab') loadAdminBilling();
 }
 
-// 3. Auth
 async function login() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
@@ -88,8 +91,7 @@ async function register() {
     const password = document.getElementById('password').value;
     if(!email || !password) return showToast("Fill both fields", "error");
     const { error } = await supabaseClient.auth.signUp({ email, password });
-    if (error) showToast(error.message, 'error');
-    else showToast('Success! Logging in...');
+    if (error) showToast(error.message, 'error'); else showToast('Success! Logging in...');
 }
 
 async function logout() { await supabaseClient.auth.signOut(); }
@@ -104,11 +106,10 @@ async function checkProfileAndLoadUI() {
         document.getElementById('mob-admin-nav').classList.remove('hidden');
         document.getElementById('mob-user-nav').classList.add('hidden');
         
-        // Auto-select first tab
         const firstBtn = document.querySelector('#desktop-admin-nav button');
         const firstMobBtn = document.querySelector('#mob-admin-nav button');
-        if(firstBtn) firstBtn.classList.add('bg-gray-800');
-        if(firstMobBtn) firstMobBtn.classList.replace('text-gray-400', 'text-purple-700');
+        if(firstBtn) firstBtn.classList.add('bg-zinc-800', 'text-white');
+        if(firstMobBtn) { firstMobBtn.classList.replace('text-zinc-400', 'text-white'); firstMobBtn.classList.add('bg-white/10'); }
         
         switchTab('admin-requests-tab');
     } else {
@@ -117,11 +118,10 @@ async function checkProfileAndLoadUI() {
         document.getElementById('mob-user-nav').classList.remove('hidden');
         document.getElementById('mob-admin-nav').classList.add('hidden');
         
-        // Auto-select first tab
         const firstBtn = document.querySelector('#desktop-user-nav button');
         const firstMobBtn = document.querySelector('#mob-user-nav button');
-        if(firstBtn) firstBtn.classList.add('bg-gray-800');
-        if(firstMobBtn) firstMobBtn.classList.replace('text-gray-400', 'text-blue-600');
+        if(firstBtn) firstBtn.classList.add('bg-zinc-800', 'text-white');
+        if(firstMobBtn) { firstMobBtn.classList.replace('text-zinc-400', 'text-white'); firstMobBtn.classList.add('bg-white/10'); }
 
         switchTab('request-tab');
         updateSummary();
@@ -137,16 +137,16 @@ function setDataType(type) {
     const daysContainer = document.getElementById('days_container');
     
     if(type === 'total') {
-        btnTotal.className = "flex-1 py-1.5 text-sm font-bold rounded-md bg-white shadow-sm text-blue-700";
-        btnDaily.className = "flex-1 py-1.5 text-sm font-bold rounded-md text-gray-500";
+        btnTotal.className = "flex-1 py-3 text-sm font-bold rounded-xl bg-white shadow text-black transition-all";
+        btnDaily.className = "flex-1 py-3 text-sm font-bold rounded-xl text-zinc-500 transition-all bg-transparent";
         document.getElementById('slider-type-display').innerText = "total";
-        slider.max = "50";
+        slider.max = "50"; slider.classList.remove('slider-orange'); slider.classList.add('slider-black');
         daysContainer.classList.add('hidden'); 
     } else {
-        btnDaily.className = "flex-1 py-1.5 text-sm font-bold rounded-md bg-white shadow-sm text-blue-700";
-        btnTotal.className = "flex-1 py-1.5 text-sm font-bold rounded-md text-gray-500";
+        btnDaily.className = "flex-1 py-3 text-sm font-bold rounded-xl bg-white shadow text-black transition-all";
+        btnTotal.className = "flex-1 py-3 text-sm font-bold rounded-xl text-zinc-500 transition-all bg-transparent";
         document.getElementById('slider-type-display').innerText = "/ day";
-        slider.max = "10";
+        slider.max = "10"; slider.classList.add('slider-orange'); slider.classList.remove('slider-black');
         daysContainer.classList.remove('hidden'); 
         if(parseInt(slider.value) > 10) slider.value = 5; 
     }
@@ -154,9 +154,7 @@ function setDataType(type) {
 }
 
 function triggerAnimation(element) {
-    element.classList.remove('animate-pop');
-    void element.offsetWidth; 
-    element.classList.add('animate-pop');
+    element.classList.remove('animate-pop'); void element.offsetWidth; element.classList.add('animate-pop');
 }
 
 function updateSummary() {
@@ -174,29 +172,26 @@ function updateSummary() {
         }
     } else customDiv.classList.add('hidden');
 
-    // Desktop
     const dCountry = document.getElementById('desktop_sum_country');
-    if(selectedCountry) dCountry.innerHTML = `<span>${selectedCountry}</span>`;
-    else dCountry.innerHTML = `<span class="text-gray-500 font-normal">Select region...</span>`;
+    if(selectedCountry) dCountry.innerHTML = `<span class="text-white">${selectedCountry}</span>`;
+    else dCountry.innerHTML = `<span class="text-zinc-600">Select region...</span>`;
     
-    // Mobile
     const mCountry = document.getElementById('mob_sum_country');
-    if(selectedCountry) mCountry.innerText = selectedCountry;
-    else mCountry.innerText = "Select region";
+    if(selectedCountry) { mCountry.innerText = selectedCountry; mCountry.classList.replace('text-zinc-400', 'text-zinc-300'); }
+    else { mCountry.innerText = "Select Region"; mCountry.classList.replace('text-zinc-300', 'text-zinc-400'); }
 
-    // Data Calculation
     const gbValue = document.getElementById('gb_slider').value;
     document.getElementById('slider-val-display').innerText = gbValue;
 
     let dataStringDesktop = "", dataStringMobile = "";
     if (currentDataType === 'total') {
-        dataStringDesktop = `${gbValue} GB <span class="text-sm font-normal text-gray-400">(Total)</span>`;
+        dataStringDesktop = `${gbValue} GB <span class="text-xs font-bold text-zinc-500 tracking-widest uppercase ml-1">Total</span>`;
         dataStringMobile = `${gbValue} GB Total`;
     } else {
         const daysValue = document.getElementById('days_slider').value;
         document.getElementById('days-val-display').innerText = daysValue;
-        dataStringDesktop = `${gbValue} GB <span class="text-sm font-normal text-gray-300">/ day for ${daysValue} Days</span>`;
-        dataStringMobile = `${gbValue}GB/day (${daysValue}d)`;
+        dataStringDesktop = `${gbValue} GB <span class="text-xs font-bold text-zinc-500 tracking-widest uppercase ml-1">/ day for ${daysValue}d</span>`;
+        dataStringMobile = `${gbValue}GB/d (${daysValue}d)`;
     }
     
     const dData = document.getElementById('desktop_sum_data');
@@ -205,17 +200,12 @@ function updateSummary() {
         dData.dataset.val = dataStringDesktop;
         triggerAnimation(dData);
     }
-    
     document.getElementById('mob_sum_data').innerText = dataStringMobile;
 
-    // Buttons
     const dBtn = document.getElementById('desktop_submit_btn');
     const mBtn = document.getElementById('mob_submit_btn');
-    if (selectedCountry !== "") {
-        dBtn.removeAttribute('disabled'); mBtn.removeAttribute('disabled');
-    } else {
-        dBtn.setAttribute('disabled', 'true'); mBtn.setAttribute('disabled', 'true');
-    }
+    if (selectedCountry !== "") { dBtn.removeAttribute('disabled'); mBtn.removeAttribute('disabled'); } 
+    else { dBtn.setAttribute('disabled', 'true'); mBtn.setAttribute('disabled', 'true'); }
 }
 
 async function requestEsim() {
@@ -248,44 +238,37 @@ async function requestEsim() {
         document.getElementById('desktop_submit_btn').removeAttribute('disabled');
         document.getElementById('mob_submit_btn').removeAttribute('disabled');
     } else {
-        showToast('Request sent successfully!');
+        showToast('eSIM Requested!');
         document.getElementById('gb_slider').value = 5;
         document.getElementById('custom_country_input').value = "";
         if(document.querySelector('input[name="country_selection"]:checked')) document.querySelector('input[name="country_selection"]:checked').checked = false;
-        setDataType('total');
-        updateSummary(); 
+        setDataType('total'); updateSummary(); 
         
-        // Auto switch tab & button highlight
-        document.querySelectorAll('.nav-btn, .mob-nav-btn').forEach(btn => btn.classList.remove('bg-gray-800', 'text-blue-600'));
-        document.querySelectorAll('.mob-nav-btn').forEach(btn => btn.classList.add('text-gray-400'));
+        document.querySelectorAll('.nav-btn, .mob-nav-btn').forEach(btn => {
+            btn.classList.remove('bg-zinc-800', 'text-white', 'bg-white/10');
+            if(btn.classList.contains('mob-nav-btn')) btn.classList.add('text-zinc-400');
+        });
         
         switchTab('my-esims-tab');
         
-        // Manually highlight the middle button
         const dBtn = document.querySelectorAll('#desktop-user-nav button')[1];
         const mBtn = document.querySelectorAll('#mob-user-nav button')[1];
-        if(dBtn) dBtn.classList.add('bg-gray-800');
-        if(mBtn) mBtn.classList.replace('text-gray-400', 'text-blue-600');
+        if(dBtn) dBtn.classList.add('bg-zinc-800', 'text-white');
+        if(mBtn) { mBtn.classList.replace('text-zinc-400', 'text-white'); mBtn.classList.add('bg-white/10'); }
     }
 }
 
-// 6. CARD HELPERS
-function getPlanDescriptionCard(req) {
+// 6. CARD RENDERING HELPERS
+function getPlanInfo(req) {
     if (req.data_type === 'daily') {
         const diffDays = Math.round(Math.abs((new Date(req.end_date) - new Date(req.start_date)) / 86400000));
-        return `<span class="font-bold text-gray-800 text-xl">${req.requested_gb}GB</span> <span class="text-gray-500 text-xs font-semibold ml-1">/ day (${diffDays} days)</span>`;
-    } else return `<span class="font-bold text-gray-800 text-xl">${req.requested_gb}GB</span> <span class="text-gray-500 text-xs font-semibold ml-1 uppercase">(Total)</span>`;
+        return { large: `${req.requested_gb}GB`, small: `/ DAY FOR ${diffDays} DAYS` };
+    } else return { large: `${req.requested_gb}GB`, small: 'TOTAL PLAN' };
 }
 
-function getStatusBadge(status) {
-    if(status === 'pending') return `<span class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold border border-orange-200 shadow-sm"><i class="fa-solid fa-hourglass-half mr-1"></i> PENDING</span>`;
-    if(status === 'processing') return `<span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold border border-blue-200 shadow-sm"><i class="fa-solid fa-gear fa-spin mr-1"></i> ADMIN BUYING</span>`;
-    if(status === 'approved') return `<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-200 shadow-sm"><i class="fa-solid fa-check mr-1"></i> APPROVED</span>`;
-    if(status === 'rejected') return `<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold border border-red-200 shadow-sm"><i class="fa-solid fa-xmark mr-1"></i> CANCELLED</span>`;
-    return status;
-}
+function hashCode(str) { let hash = 0; for (let i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); } return hash; }
 
-// 7. USER VIEWS (Cards)
+// 7. USER VIEWS (Digital Cards)
 async function loadUserRequests() {
     const { data, error } = await supabaseClient.from('esim_requests').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
     if (error) return;
@@ -293,31 +276,49 @@ async function loadUserRequests() {
     container.innerHTML = '';
 
     if (data.length === 0) {
-        container.innerHTML = `<div class="col-span-full p-8 text-center text-gray-400 font-bold bg-white rounded-2xl border border-gray-100"><i class="fa-solid fa-ghost text-4xl mb-3 block"></i> No eSIMs yet.</div>`;
-        return;
+        container.innerHTML = `<div class="col-span-full p-10 text-center text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-100 shadow-sm">No eSIMs in your wallet.</div>`; return;
     }
 
-    data.forEach(req => {
-        let actionHTML = '';
-        if(req.status === 'approved' && req.installation_link) actionHTML = `<a href="${req.installation_link}" target="_blank" class="w-full text-center block bg-blue-100 text-blue-700 px-4 py-3 rounded-xl text-sm font-bold hover:bg-blue-200 transition"><i class="fa-solid fa-qrcode mr-2"></i> Install QR</a>`;
-        else if(req.status === 'rejected') actionHTML = `<div class="w-full text-center text-red-400 text-sm font-bold italic py-2">Request denied</div>`;
-        else if(req.status === 'processing') actionHTML = `<div class="w-full text-center text-blue-500 text-sm font-bold italic py-2">Hold on, admin is processing...</div>`;
-        else actionHTML = `<div class="w-full text-center text-gray-400 text-sm font-bold italic py-2">Waiting for admin to see it</div>`;
+    data.forEach((req, idx) => {
+        const plan = getPlanInfo(req);
+        const bgClass = bgColors[Math.abs(hashCode(req.country)) % bgColors.length];
+        
+        let actionUI = '';
+        let statusUI = '';
+
+        if(req.status === 'approved' && req.installation_link) {
+            statusUI = `<div class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white tracking-widest uppercase">Active</div>`;
+            actionUI = `<a href="${req.installation_link}" target="_blank" class="w-full bg-white text-black text-center py-3 rounded-xl font-black active:scale-95 transition block shadow-xl"><i class="fa-solid fa-qrcode mr-2"></i> Install eSIM</a>`;
+        } else if(req.status === 'rejected') {
+            statusUI = `<div class="bg-red-500/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white tracking-widest uppercase">Cancelled</div>`;
+            actionUI = `<div class="w-full bg-black/20 text-white/50 text-center py-3 rounded-xl font-bold">Request Denied</div>`;
+        } else if(req.status === 'processing') {
+            statusUI = `<div class="bg-blue-500/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white tracking-widest uppercase"><i class="fa-solid fa-gear fa-spin mr-1"></i> Processing</div>`;
+            actionUI = `<div class="w-full bg-black/20 text-white text-center py-3 rounded-xl font-bold">Admin is preparing it...</div>`;
+        } else {
+            statusUI = `<div class="bg-orange-500/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-white tracking-widest uppercase"><i class="fa-solid fa-clock mr-1"></i> Pending</div>`;
+            actionUI = `<div class="w-full bg-black/20 text-white text-center py-3 rounded-xl font-bold">Waiting for Admin</div>`;
+        }
 
         container.innerHTML += `
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition relative overflow-hidden group">
-                <div class="flex justify-between items-start mb-6 relative z-10">
+            <div class="relative bg-gradient-to-br ${bgClass} rounded-[2rem] p-6 text-white shadow-xl shadow-black/10 overflow-hidden flex flex-col justify-between aspect-[4/3] md:aspect-[1.58/1]">
+                <div class="absolute -right-10 -top-10 text-white/10 text-9xl"><i class="fa-solid fa-sim-card"></i></div>
+                <div class="relative z-10 flex justify-between items-start">
                     <div>
-                        <h4 class="font-black text-2xl text-gray-800 leading-tight">${req.country}</h4>
-                        <div class="mt-2">${getPlanDescriptionCard(req)}</div>
+                        <p class="text-white/70 text-[10px] font-bold tracking-widest uppercase mb-1">Destination</p>
+                        <h3 class="text-2xl font-black tracking-tight leading-none">${req.country}</h3>
+                    </div>
+                    ${statusUI}
+                </div>
+                <div class="relative z-10 my-auto">
+                    <p class="text-white/70 text-[10px] font-bold tracking-widest uppercase mb-1">Data Plan</p>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-4xl font-black tracking-tighter">${plan.large}</span>
+                        <span class="text-xs font-bold text-white/80">${plan.small}</span>
                     </div>
                 </div>
-                <div class="absolute top-4 right-4 z-10">${getStatusBadge(req.status)}</div>
-                <div class="pt-4 border-t border-gray-50 mt-auto relative z-10">
-                    ${actionHTML}
-                </div>
-            </div>
-        `;
+                <div class="relative z-10 mt-4">${actionUI}</div>
+            </div>`;
     });
 }
 
@@ -330,40 +331,35 @@ async function loadUserBilling() {
         if(!monthlyData[month]) monthlyData[month] = { gb: 0, cost: 0, items: 0 };
         let reqGb = parseFloat(req.requested_gb);
         if(req.data_type === 'daily') reqGb = reqGb * Math.round(Math.abs((new Date(req.end_date) - new Date(req.start_date)) / 86400000));
-        monthlyData[month].gb += reqGb;
-        monthlyData[month].cost += parseFloat(req.price || 0);
-        monthlyData[month].items += 1;
+        monthlyData[month].gb += reqGb; monthlyData[month].cost += parseFloat(req.price || 0); monthlyData[month].items += 1;
     });
     const container = document.getElementById('user-billing-list');
     container.innerHTML = '';
     const sortedMonths = Object.keys(monthlyData).sort().reverse();
-    
-    if(sortedMonths.length === 0) return container.innerHTML = `<div class="col-span-full p-8 text-center text-gray-400 font-bold bg-white rounded-2xl border border-gray-100">No billing history yet.</div>`;
-    
+    if(sortedMonths.length === 0) return container.innerHTML = `<div class="col-span-full p-10 text-center text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-100 shadow-sm">No billing history yet.</div>`;
     sortedMonths.forEach(month => {
         const info = monthlyData[month];
         container.innerHTML += `
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
-                <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-50">
-                    <h4 class="font-black text-xl text-blue-600">${month}</h4>
-                    <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded">${info.items} eSIMs</span>
+            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-zinc-100 flex flex-col justify-between">
+                <div class="flex justify-between items-center mb-6">
+                    <h4 class="font-black text-2xl text-zinc-900 tracking-tight">${month}</h4>
+                    <span class="bg-zinc-100 text-zinc-600 text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-full">${info.items} eSIMs</span>
                 </div>
                 <div class="flex justify-between items-end">
                     <div>
-                        <p class="text-xs text-gray-400 font-bold uppercase mb-1">Total Used</p>
-                        <p class="font-bold text-gray-800">${info.gb} GB</p>
+                        <p class="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mb-1">Total Data</p>
+                        <p class="font-bold text-zinc-700">${info.gb} GB</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-xs text-gray-400 font-bold uppercase mb-1">Total Due</p>
-                        <p class="font-black text-3xl text-gray-900 leading-none">${info.cost.toFixed(2)}</p>
+                        <p class="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mb-1">Total Due</p>
+                        <p class="font-black text-4xl text-black tracking-tighter leading-none">${info.cost.toFixed(2)}</p>
                     </div>
                 </div>
-            </div>
-        `;
+            </div>`;
     });
 }
 
-// 8. ADMIN VIEWS (Cards)
+// 8. ADMIN VIEWS
 async function loadAdminRequests() {
     const { data, error } = await supabaseClient.from('esim_requests').select('*, profiles(email)').order('created_at', { ascending: false });
     if (error) return;
@@ -374,49 +370,50 @@ async function loadAdminRequests() {
     data.forEach(req => {
         if (req.status === 'pending' || req.status === 'processing') {
             pending++;
+            const plan = getPlanInfo(req);
             let actionArea = '';
             
             if (req.status === 'pending') {
                 actionArea = `
-                    <div class="flex gap-2 mt-4">
-                        <button onclick="changeStatus('${req.id}', 'rejected')" class="bg-red-50 text-red-500 p-3 rounded-xl hover:bg-red-100 transition"><i class="fa-solid fa-ban"></i></button>
-                        <button onclick="changeStatus('${req.id}', 'processing')" class="flex-1 bg-blue-100 text-blue-700 py-3 rounded-xl font-bold hover:bg-blue-200 transition">Start Process</button>
+                    <div class="flex gap-2">
+                        <button onclick="changeStatus('${req.id}', 'rejected')" class="bg-red-50 text-red-500 px-4 py-3 rounded-xl hover:bg-red-100 transition active:scale-95"><i class="fa-solid fa-ban"></i></button>
+                        <button onclick="changeStatus('${req.id}', 'processing')" class="flex-1 bg-black text-white py-3 rounded-xl font-bold hover:bg-zinc-800 transition shadow-lg active:scale-95">Accept & Process</button>
                     </div>`;
             } else {
                 actionArea = `
-                    <div class="flex flex-col gap-2 mt-4">
-                        <input type="text" id="link_${req.id}" class="bg-purple-50 border border-purple-100 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-purple-400" placeholder="Paste QR Link here...">
+                    <div class="flex flex-col gap-2">
+                        <input type="text" id="link_${req.id}" class="bg-zinc-50 border-0 rounded-xl p-3 text-sm font-medium outline-none focus:ring-2 focus:ring-black" placeholder="Paste QR Link here...">
                         <div class="flex gap-2">
                             <div class="relative w-1/3">
-                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 font-bold">$</span>
-                                <input type="number" step="0.01" id="price_${req.id}" class="w-full bg-purple-50 border border-purple-100 rounded-xl p-3 pl-8 text-sm outline-none focus:ring-2 focus:ring-purple-400 font-bold" placeholder="Cost">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-400 font-bold">$</span>
+                                <input type="number" step="0.01" id="price_${req.id}" class="w-full bg-zinc-50 border-0 rounded-xl p-3 pl-7 text-sm font-black outline-none focus:ring-2 focus:ring-black" placeholder="0.00">
                             </div>
-                            <button onclick="approveRequest('${req.id}')" class="flex-1 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition shadow-md">Approve</button>
-                            <button onclick="changeStatus('${req.id}', 'rejected')" class="bg-red-50 text-red-500 px-4 rounded-xl hover:bg-red-100 transition"><i class="fa-solid fa-ban"></i></button>
+                            <button onclick="approveRequest('${req.id}')" class="flex-1 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition shadow-lg active:scale-95">Send to User</button>
+                            <button onclick="changeStatus('${req.id}', 'rejected')" class="bg-red-50 text-red-500 px-3 rounded-xl hover:bg-red-100 transition active:scale-95"><i class="fa-solid fa-ban"></i></button>
                         </div>
                     </div>`;
             }
             
             container.innerHTML += `
-                <div class="bg-white p-5 rounded-3xl shadow-sm border border-purple-100 flex flex-col justify-between">
-                    <div class="flex justify-between items-start mb-2">
+                <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-zinc-100 flex flex-col justify-between">
+                    <div class="flex justify-between items-start mb-4">
                         <div class="truncate pr-2 w-full">
-                            <p class="text-xs text-gray-400 font-bold uppercase truncate">${req.profiles?.email || 'Unknown'}</p>
-                            <h4 class="font-black text-xl text-purple-900 truncate mt-1">${req.country}</h4>
+                            <p class="text-[10px] text-zinc-400 font-bold tracking-widest uppercase truncate mb-1">${req.profiles?.email || 'Unknown'}</p>
+                            <h4 class="font-black text-2xl text-zinc-900 truncate tracking-tight">${req.country}</h4>
                         </div>
-                        <div class="shrink-0">${getStatusBadge(req.status)}</div>
+                        <div class="shrink-0">
+                            <span class="w-8 h-8 rounded-full flex items-center justify-center ${req.status === 'pending' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}"><i class="fa-solid ${req.status === 'pending' ? 'fa-hourglass-half' : 'fa-gear fa-spin'}"></i></span>
+                        </div>
                     </div>
-                    <div class="mt-2">
-                        ${getPlanDescriptionCard(req)}
+                    <div class="bg-zinc-50 rounded-xl p-3 mb-4">
+                        <span class="font-black text-lg">${plan.large}</span> <span class="text-xs font-bold text-zinc-500">${plan.small}</span>
                     </div>
-                    <div class="pt-4 border-t border-purple-50 mt-4">
-                        ${actionArea}
-                    </div>
+                    <div class="mt-auto">${actionArea}</div>
                 </div>`;
         }
     });
     
-    if(pending===0) container.innerHTML = `<div class="col-span-full p-8 text-center text-purple-300 font-bold bg-white rounded-3xl border border-purple-50"><i class="fa-solid fa-mug-hot text-4xl mb-3 block"></i> All caught up! No pending requests.</div>`;
+    if(pending===0) container.innerHTML = `<div class="col-span-full p-10 text-center text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-100 shadow-sm"><div class="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mx-auto mb-3"><i class="fa-solid fa-check text-2xl"></i></div> Inbox Zero. Great job!</div>`;
 }
 
 async function loadAdminHistory() {
@@ -425,32 +422,28 @@ async function loadAdminHistory() {
     const container = document.getElementById('admin-history-list');
     container.innerHTML = '';
     
-    if (data.length === 0) return container.innerHTML = `<div class="col-span-full p-8 text-center text-gray-400 font-bold bg-white rounded-2xl border border-gray-100">No history found.</div>`;
+    if (data.length === 0) return container.innerHTML = `<div class="col-span-full p-10 text-center text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-100 shadow-sm">No data found.</div>`;
 
     data.forEach(req => {
-        let dateStr = new Date(req.created_at).toLocaleDateString();
-        let linkHtml = req.installation_link ? `<a href="${req.installation_link}" target="_blank" class="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition"><i class="fa-solid fa-link"></i></a>` : '';
-        let costStr = req.price ? `<span class="text-green-600 font-black">${parseFloat(req.price).toFixed(2)}</span>` : '<span class="text-gray-300">-</span>';
+        const plan = getPlanInfo(req);
+        let statusColor = req.status === 'approved' ? 'text-green-500' : req.status === 'rejected' ? 'text-red-500' : 'text-orange-500';
+        let linkHtml = req.installation_link ? `<a href="${req.installation_link}" target="_blank" class="w-8 h-8 bg-zinc-100 text-zinc-600 hover:bg-blue-100 hover:text-blue-600 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-link text-xs"></i></a>` : '';
+        let costStr = req.price ? `<span class="text-green-600 font-black">${parseFloat(req.price).toFixed(2)}</span>` : '<span class="text-zinc-300">-</span>';
         
         container.innerHTML += `
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                <div class="flex justify-between items-start mb-3 border-b border-gray-50 pb-3">
-                    <div class="truncate pr-2">
-                        <p class="text-xs text-gray-400 font-bold uppercase truncate">${req.profiles?.email?.split('@')[0] || 'Unknown'}</p>
-                        <h4 class="font-bold text-lg text-gray-800 truncate">${req.country}</h4>
-                    </div>
-                    <div class="text-right shrink-0">
-                        <p class="text-xs text-gray-400">${dateStr}</p>
-                        ${getStatusBadge(req.status)}
-                    </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-zinc-100 flex items-center justify-between gap-4">
+                <div class="w-2 h-12 rounded-full bg-zinc-100 ${req.status === 'approved' ? '!bg-green-400' : req.status === 'rejected' ? '!bg-red-400' : ''}"></div>
+                <div class="flex-1 overflow-hidden">
+                    <p class="text-[10px] text-zinc-400 font-bold tracking-widest uppercase truncate">${req.profiles?.email?.split('@')[0] || 'Unknown'}</p>
+                    <h4 class="font-bold text-lg text-zinc-900 truncate tracking-tight leading-tight">${req.country}</h4>
+                    <p class="text-xs text-zinc-500 font-medium">${plan.large} ${plan.small.toLowerCase()}</p>
                 </div>
-                <div class="flex justify-between items-center mt-2">
-                    <div class="text-sm">${getPlanDescriptionCard(req)}</div>
+                <div class="text-right">
                     <div class="text-lg">${costStr}</div>
                 </div>
-                <div class="flex justify-between items-center mt-4 pt-3 border-t border-gray-50">
-                    <div>${linkHtml}</div>
-                    <button onclick="deleteRequest('${req.id}')" class="text-red-400 hover:bg-red-50 p-2 rounded-lg transition text-sm font-bold"><i class="fa-solid fa-trash mr-1"></i> Delete</button>
+                <div class="flex items-center gap-2 border-l border-zinc-100 pl-4 ml-2">
+                    ${linkHtml}
+                    <button onclick="deleteRequest('${req.id}')" class="w-8 h-8 bg-zinc-50 text-red-400 hover:bg-red-100 hover:text-red-600 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-trash text-xs"></i></button>
                 </div>
             </div>`;
     });
@@ -474,28 +467,28 @@ async function loadAdminBilling() {
     container.innerHTML = '';
     const sortedKeys = Object.keys(adminMonthly).sort().reverse();
     
-    if(sortedKeys.length === 0) return container.innerHTML = `<div class="col-span-full p-8 text-center text-purple-300 font-bold bg-white rounded-2xl border border-purple-50">No bills generated yet.</div>`;
+    if(sortedKeys.length === 0) return container.innerHTML = `<div class="col-span-full p-10 text-center text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-100 shadow-sm">No revenue recorded yet.</div>`;
     
     sortedKeys.forEach(key => {
         const info = adminMonthly[key];
         container.innerHTML += `
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-purple-100 flex flex-col justify-between">
-                <div class="flex justify-between items-center mb-4 pb-4 border-b border-purple-50">
-                    <h4 class="font-black text-xl text-purple-700">${info.month}</h4>
-                    <span class="bg-purple-50 text-purple-600 text-xs font-bold px-2 py-1 rounded-lg">${info.items} eSIMs</span>
+            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-zinc-100 flex flex-col justify-between">
+                <div class="flex justify-between items-center mb-6">
+                    <h4 class="font-black text-2xl text-zinc-900 tracking-tight">${info.month}</h4>
+                    <span class="bg-blue-50 text-blue-600 text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-full">${info.items} eSIMs</span>
                 </div>
-                <div class="mb-4">
-                    <p class="text-xs text-gray-400 font-bold uppercase mb-1">User</p>
-                    <p class="font-bold text-gray-800 truncate">${info.email}</p>
+                <div class="bg-zinc-50 rounded-xl p-3 mb-6">
+                    <p class="text-[10px] text-zinc-400 font-bold tracking-widest uppercase mb-1">User</p>
+                    <p class="font-bold text-sm text-zinc-800 truncate">${info.email}</p>
                 </div>
                 <div class="flex justify-between items-end">
                     <div>
-                        <p class="text-xs text-gray-400 font-bold uppercase mb-1">Total Data</p>
-                        <p class="font-bold text-gray-600">${info.gb} GB</p>
+                        <p class="text-[10px] text-zinc-400 font-bold tracking-widest uppercase mb-1">Total Data</p>
+                        <p class="font-bold text-zinc-600">${info.gb} GB</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-xs text-gray-400 font-bold uppercase mb-1">Total Due</p>
-                        <p class="font-black text-3xl text-gray-900 leading-none">${info.cost.toFixed(2)}</p>
+                        <p class="text-[10px] text-zinc-400 font-bold tracking-widest uppercase mb-1">Total Due</p>
+                        <p class="font-black text-4xl text-black tracking-tighter leading-none">${info.cost.toFixed(2)}</p>
                     </div>
                 </div>
             </div>`;
@@ -515,7 +508,7 @@ async function approveRequest(reqId) {
     if(!linkInput) return showToast("Provide link", "error");
     const { error } = await supabaseClient.from('esim_requests').update({ status: 'approved', installation_link: linkInput, price: priceInput }).eq('id', reqId);
     if (error) showToast(error.message, 'error');
-    else { showToast("Approved!"); loadAdminRequests(); }
+    else { showToast("Approved & Sent!"); loadAdminRequests(); }
 }
 
 async function deleteRequest(reqId) {
