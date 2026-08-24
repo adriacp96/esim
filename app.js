@@ -1,7 +1,6 @@
 // 1. Supabase Configuration
-// REPLACE THESE VARIABLES with your Supabase project data
-const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR-ANON-KEY';
+const SUPABASE_URL = 'https://dvutnthqhkmqzgkihdtd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR2dXRudGhxaGttcXpna2loZHRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1MzcxOTAsImV4cCI6MjEwMzExMzE5MH0.nfcTnpmzJ8Jz9bO10Xox9T6D1UOF7fwfG-3IOtn9ceI';
 
 const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -66,7 +65,7 @@ async function register() {
     const password = document.getElementById('password').value;
     const { error } = await supabase.auth.signUp({ email, password });
     if (error) showError(error.message);
-    else alert("Registration successful. Check your email (if confirmation is enabled) or log in.");
+    else alert("Registration successful. Check your email or log in.");
 }
 
 async function logout() {
@@ -75,14 +74,13 @@ async function logout() {
 
 // 5. Main Data Loading
 async function checkProfileAndLoadUI() {
-    // Fetch the user's profile to check if they are an admin
     const { data: profile } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', currentUser.id)
         .single();
     
-    userProfile = profile || { role: 'user' }; // Fallback in case table isn't created yet
+    userProfile = profile || { role: 'user' }; 
 
     if (userProfile.role === 'admin') {
         showView('admin-view');
@@ -113,7 +111,7 @@ async function requestEsim(e) {
     } else {
         alert("Request sent successfully");
         document.getElementById('esim-form').reset();
-        loadUserRequests(); // Reload the table
+        loadUserRequests(); 
     }
 }
 
@@ -193,5 +191,5 @@ async function approveRequest(reqId) {
         .eq('id', reqId);
 
     if (error) alert("Error approving: " + error.message);
-    else loadAdminRequests(); // Reload the table
+    else loadAdminRequests(); 
 }
