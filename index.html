@@ -92,7 +92,7 @@
     <div id="toast-container" class="fixed top-4 left-4 right-4 md:left-auto md:w-96 z-[9999] flex flex-col gap-3"></div>
     <div id="auth-view" class="fixed inset-0 w-full h-full flex items-center justify-center bg-zinc-100 z-40 p-4 overflow-hidden">
         <div class="bg-white rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] w-full max-w-md animate-slide-up border border-white flex flex-col overflow-hidden">
-            <div class="w-full aspect-video">
+            <div class="w-full aspect-video bg-transparent flex items-center justify-center">
                 <video 
                     id="rostyVid" 
                     src="rosty.mov" 
@@ -100,7 +100,7 @@
                     muted 
                     playsinline 
                     disablePictureInPicture 
-                    class="w-full h-full object-cover pointer-events-none select-none bg-transparent"
+                    class="w-full h-full object-contain pointer-events-none select-none bg-transparent"
                     style="border: none; outline: none; box-shadow: none;"
                 ></video>
             </div>
