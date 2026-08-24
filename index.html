@@ -93,12 +93,6 @@
     <div id="auth-view" class="fixed inset-0 w-full h-full flex items-center justify-center bg-zinc-100 z-40 p-4 overflow-hidden">
         <div class="bg-white rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] w-full max-w-md animate-slide-up border border-white flex flex-col overflow-hidden">
             <div class="w-full aspect-video bg-transparent relative flex items-center justify-center overflow-hidden">
-                <img 
-                    id="rostyPoster" 
-                    src="rostybw.png" 
-                    alt="Preview" 
-                    class="absolute inset-0 w-full h-full object-contain pointer-events-none select-none transition-opacity duration-700 ease-in-out z-10"
-                >
                 <video 
                     id="rostyVid" 
                     src="rosty.mov" 
@@ -106,9 +100,15 @@
                     muted 
                     playsinline 
                     disablePictureInPicture 
-                    class="absolute inset-0 w-full h-full object-contain pointer-events-none select-none bg-transparent opacity-0 transition-opacity duration-700 ease-in-out z-0"
+                    class="absolute inset-0 w-full h-full object-contain pointer-events-none select-none bg-transparent z-0"
                     style="border: none; outline: none; box-shadow: none;"
                 ></video>
+                <img 
+                    id="rostyPoster" 
+                    src="rostybw.png" 
+                    alt="Preview" 
+                    class="absolute inset-0 w-full h-full object-contain pointer-events-none select-none transition-opacity duration-1000 ease-in-out z-10 opacity-100"
+                >
             </div>
             <div class="px-8 pb-8 md:px-10 md:pb-10 pt-4 md:pt-6">
                 <form id="auth-form" onsubmit="event.preventDefault();" class="space-y-5">
@@ -738,9 +738,15 @@
         const rPoster = document.getElementById('rostyPoster');
         if (rVid && rPoster) {
             let isReversing = false;
-            rVid.addEventListener('canplaythrough', () => {
-                rVid.style.opacity = '1';
-                rPoster.style.opacity = '0';
+
+            rVid.addEventListener('playing', () => {
+                setTimeout(() => {
+                    rPoster.style.opacity = '0';
+                }, 80);
+            }, { once: true });
+
+            rVid.addEventListener('canplay', () => {
+                rVid.play().catch(() => {});
             }, { once: true });
 
             rVid.addEventListener('timeupdate', () => {
@@ -763,3 +769,4 @@
     <script src="app.js"></script>
 </body>
 </html>
+```[cite: 1, 2]
