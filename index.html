@@ -190,24 +190,22 @@
                             </div>
                         </div>
 
-                        <!-- MOBILE CHECKOUT CARD: Embedded directly into the scrolling stream below options so it's 100% visible and never floats over menus -->
-                        <div id="mobile-summary" class="lg:hidden bg-zinc-900 rounded-[2rem] p-6 text-white shadow-xl mt-4 hidden animate-slide-up">
-                            <div class="mb-4">
-                                <h3 class="font-black text-xl tracking-tight">Checkout</h3>
-                                <p class="text-zinc-400 text-xs mt-0.5">Review your plan.</p>
-                            </div>
-                            <div class="space-y-3 mb-6">
-                                <div class="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700/50">
-                                    <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-1">Destination</p>
-                                    <div id="mob_sum_country" class="font-bold text-base text-zinc-300">Select Region</div>
-                                </div>
-                                <div class="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700/50">
-                                    <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-1">Data Plan</p>
-                                    <div id="mob_sum_data" class="font-black text-xl text-white">-</div>
+                        <!-- COMPACT MOBILE CHECKOUT CARD: Embedded cleanly in flow, side-by-side details, fully visible -->
+                        <div id="mobile-summary" class="lg:hidden bg-zinc-900 rounded-2xl p-4 text-white shadow-xl mt-4 hidden animate-slide-up flex items-center justify-between gap-4">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex gap-4 text-xs">
+                                    <div>
+                                        <span class="text-zinc-500 font-bold uppercase tracking-wider block text-[9px]">Region</span>
+                                        <span id="mob_sum_country" class="font-bold text-zinc-300 truncate block">Select Region</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-zinc-500 font-bold uppercase tracking-wider block text-[9px]">Plan</span>
+                                        <span id="mob_sum_data" class="font-black text-white truncate block">-</span>
+                                    </div>
                                 </div>
                             </div>
-                            <button type="button" onclick="requestEsim()" id="mob_submit_btn" disabled class="w-full bg-white disabled:bg-zinc-800 disabled:text-zinc-600 text-black font-black py-4 rounded-xl transition-all active:scale-95 disabled:shadow-none">
-                                Request eSIM
+                            <button type="button" onclick="requestEsim()" id="mob_submit_btn" disabled class="bg-white disabled:bg-zinc-800 disabled:text-zinc-600 text-black font-black px-5 py-3 rounded-xl transition-all active:scale-95 shrink-0 text-xs shadow-none">
+                                Request
                             </button>
                         </div>
 
