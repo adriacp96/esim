@@ -58,7 +58,7 @@ function switchTab(tabId) {
     if (tabId === 'billing-tab') loadUserBilling();
     if (tabId === 'admin-requests-tab') loadAdminRequests();
     if (tabId === 'admin-history-tab') loadAdminHistory();
-    if (tabId === 'admin-billing-tab') loadAdminDropdown();
+    if (tabId === 'admin-billing-tab') loadAdminBilling();
 }
 
 // 3. Auth Functions
@@ -221,7 +221,8 @@ async function requestEsim() {
         end_date: endDateStr,   
         data_type: currentDataType,
         requested_gb: document.getElementById('gb_slider').value,
-        status: 'pending'
+        status: 'pending',
+        price: 0
     };
 
     document.getElementById('submit_btn').setAttribute('disabled', 'true');
@@ -312,18 +313,51 @@ async function loadUserRequests() {
     });
 }
 
+// USER BILLING (Aggregated dynamically by Month)
 async function loadUserBilling() {
-    const { data, error } = await supabaseClient.from('consumptions').select('*, esim_requests(country)').eq('user_id', currentUser.id).order('billing_month', { ascending: false });
+    const { data, error } = await supabaseClient.from('esim_requests').select('*').eq('user_id', currentUser.id).eq('status', 'approved');
     if (error) return;
+
+    const monthlyData = {};
+    
+    // Grouping
+    data.forEach(req => {
+        const month = req.created_at.substring(0, 7); // Format: YYYY-MM
+        if(!monthlyData[month]) monthlyData[month] = { gb: 0, cost: 0, items: 0 };
+        
+        let reqGb = parseFloat(req.requested_gb);
+        // If daily, calculate total gb for the trip
+        if(req.data_type === 'daily') {
+            const d1 = new Date(req.start_date);
+            const d2 = new Date(req.end_date);
+            const diffDays = Math.round(Math.abs((d2 - d1) / (1000 * 60 * 60 * 24)));
+            reqGb = reqGb * diffDays;
+        }
+
+        monthlyData[month].gb += reqGb;
+        monthlyData[month].cost += parseFloat(req.price || 0);
+        monthlyData[month].items += 1;
+    });
 
     const tbody = document.getElementById('user-billing-list');
     tbody.innerHTML = '';
-    data.forEach(bill => {
+    
+    // Sort months descending
+    const sortedMonths = Object.keys(monthlyData).sort().reverse();
+
+    if(sortedMonths.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400 font-bold">No billing data yet.</td></tr>`;
+        return;
+    }
+
+    sortedMonths.forEach(month => {
+        const info = monthlyData[month];
         tbody.innerHTML += `
             <tr class="hover:bg-gray-50 transition border-b border-gray-50 last:border-none">
-                <td class="p-5 font-bold text-gray-800">${bill.billing_month} <span class="text-xs font-normal text-gray-400 ml-2 block sm:inline">(${bill.esim_requests?.country || 'Unknown'})</span></td>
-                <td class="p-5 text-gray-600 font-medium">${bill.used_gb} GB</td>
-                <td class="p-5 font-black text-gray-900 text-right text-lg">${bill.total_due}</td>
+                <td class="p-5 font-black text-blue-600 text-lg">${month}</td>
+                <td class="p-5 text-gray-500 font-bold">${info.items} eSIMs</td>
+                <td class="p-5 text-gray-800 font-medium">${info.gb} GB</td>
+                <td class="p-5 font-black text-gray-900 text-right text-xl">${info.cost.toFixed(2)}</td>
             </tr>
         `;
     });
@@ -360,10 +394,13 @@ async function loadAdminRequests() {
                 `;
             } else if (req.status === 'processing') {
                 actionArea = `
-                    <div class="flex gap-2 w-full">
-                        <input type="text" id="link_${req.id}" class="flex-1 border border-purple-200 rounded p-2 text-xs outline-none focus:ring-1 focus:ring-purple-500" placeholder="Paste URL/QR Link...">
-                        <button onclick="approveRequest('${req.id}')" class="bg-green-600 text-white px-3 py-2 rounded text-xs font-bold hover:bg-green-700 transition">Approve</button>
-                        <button onclick="changeStatus('${req.id}', 'rejected')" class="bg-red-100 text-red-700 px-3 py-2 rounded text-xs font-bold hover:bg-red-200 transition" title="Deny / Cancel"><i class="fa-solid fa-ban"></i></button>
+                    <div class="flex flex-col gap-2 w-full">
+                        <input type="text" id="link_${req.id}" class="w-full border border-purple-200 rounded p-2 text-xs outline-none focus:ring-1 focus:ring-purple-500" placeholder="Paste URL/QR Link...">
+                        <div class="flex gap-2">
+                            <input type="number" step="0.01" id="price_${req.id}" class="w-24 border border-purple-200 rounded p-2 text-xs outline-none focus:ring-1 focus:ring-purple-500" placeholder="Cost ($/€)">
+                            <button onclick="approveRequest('${req.id}')" class="flex-1 bg-green-600 text-white px-3 py-2 rounded text-xs font-bold hover:bg-green-700 transition">Approve</button>
+                            <button onclick="changeStatus('${req.id}', 'rejected')" class="bg-red-100 text-red-700 px-3 py-2 rounded text-xs font-bold hover:bg-red-200 transition" title="Deny / Cancel"><i class="fa-solid fa-ban"></i></button>
+                        </div>
                     </div>
                 `;
             }
@@ -379,7 +416,7 @@ async function loadAdminRequests() {
                         <br><span class="font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded inline-block text-xs mt-1">${getPlanDescriptionAdmin(req)}</span>
                     </td>
                     <td class="p-4">${getStatusHTML(req.status)}</td>
-                    <td class="p-4 min-w-[250px]">${actionArea}</td>
+                    <td class="p-4 min-w-[280px]">${actionArea}</td>
                 </tr>
             `;
         }
@@ -409,7 +446,13 @@ async function loadAdminHistory() {
 
     data.forEach(req => {
         let dateStr = new Date(req.created_at).toLocaleDateString();
-        let linkHtml = req.installation_link ? `<a href="${req.installation_link}" target="_blank" class="text-blue-500 hover:text-blue-700 font-bold underline text-xs"><i class="fa-solid fa-link"></i> View QR</a>` : '<span class="text-gray-400 text-xs">-</span>';
+        
+        let linkHtml = '';
+        if(req.installation_link) {
+            linkHtml = `<a href="${req.installation_link}" target="_blank" class="bg-gray-100 text-gray-700 hover:bg-gray-200 px-2 py-1 rounded text-xs font-bold transition ml-2" title="View QR Code"><i class="fa-solid fa-link"></i></a>`;
+        }
+
+        let costStr = req.price ? `<span class="font-bold text-green-600">${parseFloat(req.price).toFixed(2)}</span>` : '<span class="text-gray-400">-</span>';
 
         tbody.innerHTML += `
             <tr class="hover:bg-gray-50 transition border-b border-gray-100">
@@ -421,9 +464,9 @@ async function loadAdminHistory() {
                     <span class="font-bold text-gray-800 text-sm">${req.country}</span>
                     <br><span class="text-gray-500 text-xs">${getPlanDescriptionAdmin(req)}</span>
                 </td>
-                <td class="p-4">${getStatusHTML(req.status)}</td>
-                <td class="p-4">${linkHtml}</td>
-                <td class="p-4 text-right">
+                <td class="p-4 text-sm">${costStr}</td>
+                <td class="p-4">${getStatusHTML(req.status)} ${linkHtml}</td>
+                <td class="p-4 text-center">
                     <button onclick="deleteRequest('${req.id}')" class="text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-2 rounded transition" title="Delete Forever">
                         <i class="fa-solid fa-trash"></i>
                     </button>
@@ -432,6 +475,60 @@ async function loadAdminHistory() {
         `;
     });
 }
+
+// ADMIN BILLING (Aggregated dynamically by User & Month)
+async function loadAdminBilling() {
+    const { data, error } = await supabaseClient.from('esim_requests').select('*, profiles(email)').eq('status', 'approved');
+    if (error) return;
+
+    const adminMonthly = {};
+    
+    // Grouping
+    data.forEach(req => {
+        const month = req.created_at.substring(0, 7); // YYYY-MM
+        const email = req.profiles?.email || 'Unknown User';
+        const key = `${month}_${email}`;
+
+        if(!adminMonthly[key]) adminMonthly[key] = { email, month, gb: 0, cost: 0, items: 0 };
+        
+        let reqGb = parseFloat(req.requested_gb);
+        if(req.data_type === 'daily') {
+            const d1 = new Date(req.start_date);
+            const d2 = new Date(req.end_date);
+            const diffDays = Math.round(Math.abs((d2 - d1) / (1000 * 60 * 60 * 24)));
+            reqGb = reqGb * diffDays;
+        }
+
+        adminMonthly[key].gb += reqGb;
+        adminMonthly[key].cost += parseFloat(req.price || 0);
+        adminMonthly[key].items += 1;
+    });
+
+    const tbody = document.getElementById('admin-billing-records-list');
+    tbody.innerHTML = '';
+
+    // Sort descending by Key (Month first)
+    const sortedKeys = Object.keys(adminMonthly).sort().reverse();
+
+    if (sortedKeys.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-purple-400 font-bold">No billing records found. Approve eSIMs with a price to see them here.</td></tr>`;
+        return;
+    }
+
+    sortedKeys.forEach(key => {
+        const info = adminMonthly[key];
+        tbody.innerHTML += `
+            <tr class="hover:bg-purple-50 transition border-b border-purple-50">
+                <td class="p-5 font-bold text-gray-800">${info.email}</td>
+                <td class="p-5 font-black text-purple-700 text-lg">${info.month}</td>
+                <td class="p-5 text-gray-500 font-bold">${info.items} eSIMs</td>
+                <td class="p-5 text-gray-800 font-medium">${info.gb} GB</td>
+                <td class="p-5 font-black text-gray-900 text-right text-xl">${info.cost.toFixed(2)}</td>
+            </tr>
+        `;
+    });
+}
+
 
 async function changeStatus(reqId, newStatus) {
     const { error } = await supabaseClient.from('esim_requests').update({ status: newStatus }).eq('id', reqId);
@@ -445,18 +542,26 @@ async function changeStatus(reqId, newStatus) {
 
 async function approveRequest(reqId) {
     const linkInput = document.getElementById(`link_${reqId}`).value;
+    const priceInput = document.getElementById(`price_${reqId}`).value || 0; // Get price
+
     if(!linkInput) return showToast("Provide an installation link or QR url", "error");
 
-    const { error } = await supabaseClient.from('esim_requests').update({ status: 'approved', installation_link: linkInput }).eq('id', reqId);
+    const { error } = await supabaseClient.from('esim_requests').update({ 
+        status: 'approved', 
+        installation_link: linkInput,
+        price: priceInput
+    }).eq('id', reqId);
+
     if (error) showToast(error.message, 'error');
     else {
-        showToast("eSIM Approved & Sent to user!");
+        showToast("eSIM Approved, Priced & Sent to user!");
         loadAdminRequests(); 
+        if(document.getElementById('admin-history-tab').classList.contains('hidden') === false) loadAdminHistory();
     }
 }
 
 async function deleteRequest(reqId) {
-    if(!confirm("Are you sure you want to permanently delete this eSIM record? Any associated billing will also be deleted. This cannot be undone.")) return;
+    if(!confirm("Are you sure you want to permanently delete this eSIM record? This will also remove it from the user's billing automatically.")) return;
 
     const { error } = await supabaseClient.from('esim_requests').delete().eq('id', reqId);
     if(error) {
@@ -465,37 +570,5 @@ async function deleteRequest(reqId) {
         showToast("Record completely deleted.");
         loadAdminHistory();
         loadAdminRequests(); 
-    }
-}
-
-async function loadAdminDropdown() {
-    const { data } = await supabaseClient.from('esim_requests').select('id, country, requested_gb, data_type, start_date, end_date, profiles(email)').eq('status', 'approved');
-    const select = document.getElementById('bill_request_id');
-    select.innerHTML = '<option value="">Select a completed request...</option>';
-    if(data) {
-        data.forEach(req => {
-            select.innerHTML += `<option value="${req.id}" data-user="${req.profiles?.id}">${req.profiles?.email || 'Unknown'} — ${req.country} (${getPlanDescriptionAdmin(req)})</option>`;
-        });
-    }
-}
-
-async function addBillingRecord(e) {
-    e.preventDefault();
-    const select = document.getElementById('bill_request_id');
-    const { data: requestData } = await supabaseClient.from('esim_requests').select('user_id, requested_gb').eq('id', select.value).single();
-
-    const payload = {
-        user_id: requestData.user_id,
-        request_id: select.value,
-        billing_month: document.getElementById('bill_month').value,
-        used_gb: requestData.requested_gb, 
-        total_due: document.getElementById('bill_cost').value
-    };
-
-    const { error } = await supabaseClient.from('consumptions').insert([payload]);
-    if (error) showToast(error.message, 'error');
-    else {
-        showToast("Bill recorded successfully!");
-        document.getElementById('billing-form').reset();
     }
 }
