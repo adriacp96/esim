@@ -120,14 +120,14 @@ function setDataType(type) {
         document.getElementById('slider-type-display').innerText = "total";
         slider.max = "50";
         document.getElementById('slider-max-label').innerText = "50 GB+";
-        daysContainer.classList.add('hidden'); // Hide days slider
+        daysContainer.classList.add('hidden'); 
     } else {
         btnDaily.className = "flex-1 py-2 text-sm font-bold rounded-md bg-white shadow-sm text-blue-700 transition";
         btnTotal.className = "flex-1 py-2 text-sm font-bold rounded-md text-gray-500 hover:text-gray-800 transition";
         document.getElementById('slider-type-display').innerText = "/ day";
         slider.max = "10";
         document.getElementById('slider-max-label').innerText = "10 GB";
-        daysContainer.classList.remove('hidden'); // Show days slider
+        daysContainer.classList.remove('hidden'); 
         
         if(parseInt(slider.value) > 10) slider.value = 5; 
     }
@@ -175,7 +175,6 @@ function updateSummary() {
         const gbValue = document.getElementById('gb_slider').value;
         document.getElementById('slider-val-display').innerText = gbValue;
 
-        // Days logic
         let dataString = "";
         if (currentDataType === 'total') {
             dataString = `${gbValue} GB <span class="text-sm font-normal text-gray-400">(Total)</span>`;
@@ -204,7 +203,6 @@ async function requestEsim() {
     let selectedCountry = document.querySelector('input[name="country_selection"]:checked').value;
     if(selectedCountry === 'custom') selectedCountry = document.getElementById('custom_country_input').value.trim();
 
-    // Generate dates to infer Days
     const dummyDateStr = new Date().toISOString().split('T')[0];
     let endDateStr = dummyDateStr;
 
@@ -234,7 +232,6 @@ async function requestEsim() {
     } else {
         showToast('eSIM Request sent successfully!');
         
-        // Reset UI
         document.getElementById('gb_slider').value = 5;
         document.getElementById('days_slider').value = 7;
         document.getElementById('custom_country_input').value = "";
@@ -352,18 +349,21 @@ async function loadAdminRequests() {
             let dateStr = new Date(req.created_at).toLocaleDateString();
             
             let actionArea = '';
+            
+            // BOTÓN DENY AGREGADO AQUÍ PARA AMBOS ESTADOS
             if (req.status === 'pending') {
                 actionArea = `
                     <div class="flex justify-end gap-2">
+                        <button onclick="changeStatus('${req.id}', 'rejected')" class="bg-red-100 text-red-700 px-3 py-2 rounded text-xs font-bold hover:bg-red-200 transition"><i class="fa-solid fa-ban mr-1"></i> Deny</button>
                         <button onclick="changeStatus('${req.id}', 'processing')" class="bg-blue-100 text-blue-700 px-3 py-2 rounded text-xs font-bold hover:bg-blue-200 transition">Start Processing</button>
-                        <button onclick="changeStatus('${req.id}', 'rejected')" class="bg-red-50 text-red-500 px-3 py-2 rounded text-xs font-bold hover:bg-red-100 transition"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 `;
             } else if (req.status === 'processing') {
                 actionArea = `
-                    <div class="flex gap-2">
-                        <input type="text" id="link_${req.id}" class="border border-purple-200 rounded p-2 w-full text-xs outline-none focus:ring-1 focus:ring-purple-500" placeholder="Paste URL/QR Link...">
-                        <button onclick="approveRequest('${req.id}')" class="bg-green-600 text-white px-4 py-2 rounded text-xs font-bold hover:bg-green-700 transition">Approve</button>
+                    <div class="flex gap-2 w-full">
+                        <input type="text" id="link_${req.id}" class="flex-1 border border-purple-200 rounded p-2 text-xs outline-none focus:ring-1 focus:ring-purple-500" placeholder="Paste URL/QR Link...">
+                        <button onclick="approveRequest('${req.id}')" class="bg-green-600 text-white px-3 py-2 rounded text-xs font-bold hover:bg-green-700 transition">Approve</button>
+                        <button onclick="changeStatus('${req.id}', 'rejected')" class="bg-red-100 text-red-700 px-3 py-2 rounded text-xs font-bold hover:bg-red-200 transition" title="Deny / Cancel"><i class="fa-solid fa-ban"></i></button>
                     </div>
                 `;
             }
@@ -398,7 +398,7 @@ async function changeStatus(reqId, newStatus) {
     const { error } = await supabaseClient.from('esim_requests').update({ status: newStatus }).eq('id', reqId);
     if (error) showToast(error.message, 'error');
     else {
-        showToast(newStatus === 'rejected' ? 'Request cancelled.' : 'Moved to Processing!');
+        showToast(newStatus === 'rejected' ? 'Request denied/cancelled.' : 'Moved to Processing!');
         loadAdminRequests();
     }
 }
