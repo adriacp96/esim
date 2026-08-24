@@ -147,9 +147,10 @@
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                             <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-sm">1</span> Select Region / Country</h3>
                             
+                            <!-- USAMOS sr-only Y onclick AHORA -->
                             <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
                                 <label class="dest-card cursor-pointer">
-                                    <input type="radio" name="country_selection" value="Europe (Regional)" class="hidden" onchange="updateSummary()">
+                                    <input type="radio" name="country_selection" value="Europe (Regional)" class="sr-only" onclick="updateSummary()">
                                     <div class="border-2 border-gray-200 rounded-xl p-4 text-center relative h-full flex flex-col items-center justify-center bg-white">
                                         <i class="fa-solid fa-earth-europe text-3xl text-gray-400 mb-2"></i>
                                         <span class="font-bold text-gray-700">Europe</span>
@@ -157,7 +158,7 @@
                                     </div>
                                 </label>
                                 <label class="dest-card cursor-pointer">
-                                    <input type="radio" name="country_selection" value="United States" class="hidden" onchange="updateSummary()">
+                                    <input type="radio" name="country_selection" value="United States" class="sr-only" onclick="updateSummary()">
                                     <div class="border-2 border-gray-200 rounded-xl p-4 text-center relative h-full flex flex-col items-center justify-center bg-white">
                                         <i class="fa-solid fa-flag-usa text-3xl text-gray-400 mb-2"></i>
                                         <span class="font-bold text-gray-700">USA</span>
@@ -165,7 +166,7 @@
                                     </div>
                                 </label>
                                 <label class="dest-card cursor-pointer">
-                                    <input type="radio" name="country_selection" value="Japan" class="hidden" onchange="updateSummary()">
+                                    <input type="radio" name="country_selection" value="Japan" class="sr-only" onclick="updateSummary()">
                                     <div class="border-2 border-gray-200 rounded-xl p-4 text-center relative h-full flex flex-col items-center justify-center bg-white">
                                         <i class="fa-solid fa-torii-gate text-3xl text-gray-400 mb-2"></i>
                                         <span class="font-bold text-gray-700">Japan</span>
@@ -173,7 +174,7 @@
                                     </div>
                                 </label>
                                 <label class="dest-card cursor-pointer">
-                                    <input type="radio" name="country_selection" value="Asia (Regional)" class="hidden" onchange="updateSummary()">
+                                    <input type="radio" name="country_selection" value="Asia (Regional)" class="sr-only" onclick="updateSummary()">
                                     <div class="border-2 border-gray-200 rounded-xl p-4 text-center relative h-full flex flex-col items-center justify-center bg-white">
                                         <i class="fa-solid fa-earth-asia text-3xl text-gray-400 mb-2"></i>
                                         <span class="font-bold text-gray-700">Asia</span>
@@ -181,7 +182,7 @@
                                     </div>
                                 </label>
                                 <label class="dest-card cursor-pointer">
-                                    <input type="radio" name="country_selection" value="Global (World)" class="hidden" onchange="updateSummary()">
+                                    <input type="radio" name="country_selection" value="Global (World)" class="sr-only" onclick="updateSummary()">
                                     <div class="border-2 border-gray-200 rounded-xl p-4 text-center relative h-full flex flex-col items-center justify-center bg-white">
                                         <i class="fa-solid fa-globe text-3xl text-gray-400 mb-2"></i>
                                         <span class="font-bold text-gray-700">Global</span>
@@ -189,7 +190,7 @@
                                     </div>
                                 </label>
                                 <label class="dest-card cursor-pointer">
-                                    <input type="radio" name="country_selection" value="custom" class="hidden" onchange="updateSummary()">
+                                    <input type="radio" name="country_selection" value="custom" class="sr-only" onclick="updateSummary()">
                                     <div class="border-2 border-gray-200 rounded-xl p-4 text-center relative h-full flex flex-col items-center justify-center bg-gray-50">
                                         <i class="fa-solid fa-magnifying-glass text-xl text-gray-400 mb-2"></i>
                                         <span class="font-bold text-gray-600 text-sm">Other Country</span>
