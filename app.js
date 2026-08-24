@@ -57,6 +57,7 @@ function switchTab(tabId) {
     if (tabId === 'my-esims-tab') loadUserRequests();
     if (tabId === 'billing-tab') loadUserBilling();
     if (tabId === 'admin-requests-tab') loadAdminRequests();
+    if (tabId === 'admin-history-tab') loadAdminHistory();
     if (tabId === 'admin-billing-tab') loadAdminDropdown();
 }
 
@@ -345,12 +346,11 @@ async function loadAdminRequests() {
         if(req.status === 'processing') countProcessing++;
         if(req.status === 'approved') countApproved++;
 
+        // Actionable View (Only Pending/Processing)
         if (req.status === 'pending' || req.status === 'processing') {
             let dateStr = new Date(req.created_at).toLocaleDateString();
-            
             let actionArea = '';
             
-            // BOTÓN DENY AGREGADO AQUÍ PARA AMBOS ESTADOS
             if (req.status === 'pending') {
                 actionArea = `
                     <div class="flex justify-end gap-2">
@@ -394,12 +394,52 @@ async function loadAdminRequests() {
     document.getElementById('stat-approved').innerText = countApproved;
 }
 
+// 8.1 ADMIN: NEW HISTORY VIEW
+async function loadAdminHistory() {
+    const { data, error } = await supabaseClient.from('esim_requests').select('*, profiles(email)').order('created_at', { ascending: false });
+    if (error) return;
+
+    const tbody = document.getElementById('admin-history-list');
+    tbody.innerHTML = '';
+
+    if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400 font-bold">No eSIM history found.</td></tr>`;
+        return;
+    }
+
+    data.forEach(req => {
+        let dateStr = new Date(req.created_at).toLocaleDateString();
+        let linkHtml = req.installation_link ? `<a href="${req.installation_link}" target="_blank" class="text-blue-500 hover:text-blue-700 font-bold underline text-xs"><i class="fa-solid fa-link"></i> View QR</a>` : '<span class="text-gray-400 text-xs">-</span>';
+
+        tbody.innerHTML += `
+            <tr class="hover:bg-gray-50 transition border-b border-gray-100">
+                <td class="p-4">
+                    <p class="font-bold text-gray-700 text-sm">${req.profiles?.email || 'Unknown'}</p>
+                    <p class="text-xs text-gray-400">${dateStr}</p>
+                </td>
+                <td class="p-4">
+                    <span class="font-bold text-gray-800 text-sm">${req.country}</span>
+                    <br><span class="text-gray-500 text-xs">${getPlanDescriptionAdmin(req)}</span>
+                </td>
+                <td class="p-4">${getStatusHTML(req.status)}</td>
+                <td class="p-4">${linkHtml}</td>
+                <td class="p-4 text-right">
+                    <button onclick="deleteRequest('${req.id}')" class="text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-2 rounded transition" title="Delete Forever">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
 async function changeStatus(reqId, newStatus) {
     const { error } = await supabaseClient.from('esim_requests').update({ status: newStatus }).eq('id', reqId);
     if (error) showToast(error.message, 'error');
     else {
         showToast(newStatus === 'rejected' ? 'Request denied/cancelled.' : 'Moved to Processing!');
         loadAdminRequests();
+        if(document.getElementById('admin-history-tab').classList.contains('hidden') === false) loadAdminHistory();
     }
 }
 
@@ -411,6 +451,19 @@ async function approveRequest(reqId) {
     if (error) showToast(error.message, 'error');
     else {
         showToast("eSIM Approved & Sent to user!");
+        loadAdminRequests(); 
+    }
+}
+
+async function deleteRequest(reqId) {
+    if(!confirm("Are you sure you want to permanently delete this eSIM record? Any associated billing will also be deleted. This cannot be undone.")) return;
+
+    const { error } = await supabaseClient.from('esim_requests').delete().eq('id', reqId);
+    if(error) {
+        showToast(error.message, 'error');
+    } else {
+        showToast("Record completely deleted.");
+        loadAdminHistory();
         loadAdminRequests(); 
     }
 }
