@@ -3,42 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
     <title>eSIM App</title>
-
     <link rel="icon" type="image/png" href="esimicon.png">
     <link rel="apple-touch-icon" href="esimapp.png">
     <link rel="apple-touch-icon-precomposed" href="esimapp.png">
-
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="eSIM App">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <style>
         html, body { min-height: 100%; height: auto; overflow-y: auto; font-family: 'Inter', sans-serif; background-color: #f4f4f5; }
-
         .dest-card input[type="radio"]:checked + div {
             border-color: #000; background-color: #000; color: white;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
             transform: scale(0.98);
         }
-
         .dest-card input[type="radio"]:checked + div .icon-color { color: white; }
         .dest-card input[type="radio"]:checked + div .text-color { color: white; }
         .dest-card div { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
-
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
             background: transparent;
             margin: 5px 0;
         }
-
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
             height: 26px;
@@ -51,102 +42,70 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             transition: transform 0.1s;
         }
-
         input[type=range]::-webkit-slider-thumb:active {
             transform: scale(1.1);
         }
-
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
             height: 8px;
             background: #e4e4e7;
             border-radius: 9999px;
         }
-
         input[type=range]:focus::-webkit-slider-runnable-track {
             background: #d4d4d8;
         }
-
         .slider-black::-webkit-slider-thumb { border-color: #000; }
         .slider-orange::-webkit-slider-thumb { border-color: #f97316; }
-
         @keyframes slideUp {
-            0% {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-            100% {
-                transform: translateY(0);
-                opacity: 1;
-            }
+            0% { transform: translateY(20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
         }
-
         .animate-slide-up {
             animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-
         @keyframes pop {
-            0% {
-                transform: scale(0.95);
-                opacity: 0.8;
-            }
-            50% {
-                transform: scale(1.02);
-            }
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); opacity: 1; }
         }
-
         .animate-pop {
             animation: pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-
         .glass {
             background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
         }
-
         .glass-dark {
             background: rgba(24, 24, 27, 0.85);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
         }
-
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll {
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-
-        video.login-video {
-            pointer-events: none;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
-            outline: none;
-            border: none;
-            box-shadow: none;
-        }
     </style>
 </head>
-
 <body class="text-zinc-800 flex flex-col md:flex-row selection:bg-zinc-200">
-
     <div id="toast-container" class="fixed top-4 left-4 right-4 md:left-auto md:w-96 z-[9999] flex flex-col gap-3"></div>
-
     <div id="auth-view" class="w-full h-full min-h-screen flex items-center justify-center bg-zinc-100 absolute z-40 p-4">
         <div class="bg-white p-8 md:p-10 rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] w-full max-w-md animate-slide-up border border-white">
             <div class="text-center mb-8">
-                <div class="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-4 overflow-hidden bg-transparent shadow-none border-0 p-0">
-                    <video src="rosty.mov" autoplay muted playsinline class="login-video w-full h-full object-cover" id="pingpong-video"></video>
-                </div>
+                <video 
+                    id="rostyVid" 
+                    src="rosty.mov" 
+                    autoplay 
+                    muted 
+                    playsinline 
+                    disablePictureInPicture 
+                    controlsList="nodownload nofullscreen" 
+                    class="w-full h-auto block mx-auto mb-4 pointer-events-none select-none border-none outline-none shadow-none bg-transparent"
+                ></video>
                 <h2 class="text-3xl font-black tracking-tight text-zinc-900">eSIM App</h2>
                 <p class="text-sm text-zinc-500 font-medium mt-1">Connect anywhere in seconds.</p>
             </div>
-
             <form id="auth-form" onsubmit="event.preventDefault();" class="space-y-5">
                 <div>
                     <input
@@ -157,7 +116,6 @@
                         required
                     >
                 </div>
-
                 <div>
                     <input
                         type="password"
@@ -167,7 +125,6 @@
                         required
                     >
                 </div>
-
                 <div class="flex gap-3 pt-4">
                     <button
                         type="button"
@@ -176,7 +133,6 @@
                     >
                         Sign In
                     </button>
-
                     <button
                         type="button"
                         onclick="register()"
@@ -188,9 +144,7 @@
             </form>
         </div>
     </div>
-
     <div id="app-layout" class="hidden w-full min-h-screen flex flex-col md:flex-row z-10 relative">
-
         <aside class="hidden md:flex w-72 bg-zinc-900 text-white flex-col h-screen sticky top-0 z-20">
             <div class="p-8 pb-4">
                 <div class="flex items-center gap-3 mb-8">
@@ -199,50 +153,40 @@
                     </div>
                     <h1 class="text-2xl font-black tracking-tight">eSIM App</h1>
                 </div>
-
                 <nav id="desktop-user-nav" class="space-y-2 hidden">
                     <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-3 px-2">Menu</p>
-
                     <button onclick="switchTab('request-tab')" class="nav-btn w-full flex items-center gap-4 p-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all text-sm font-bold">
                         <i class="fa-solid fa-earth-americas text-lg"></i>
                         Get Data
                     </button>
-
                     <button onclick="switchTab('my-esims-tab')" class="nav-btn w-full flex items-center gap-4 p-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all text-sm font-bold">
                         <i class="fa-solid fa-sim-card text-lg"></i>
                         eSIM
                     </button>
-
                     <button onclick="switchTab('billing-tab')" class="nav-btn w-full flex items-center gap-4 p-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all text-sm font-bold">
                         <i class="fa-solid fa-receipt text-lg"></i>
                         Billing
                     </button>
                 </nav>
-
                 <nav id="desktop-admin-nav" class="space-y-2 hidden">
                     <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-3 px-2">Workspace</p>
-
                     <button onclick="switchTab('admin-requests-tab')" class="nav-btn w-full flex items-center gap-4 p-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all text-sm font-bold">
                         <i class="fa-solid fa-inbox text-lg"></i>
                         Requests
                     </button>
-
                     <button onclick="switchTab('admin-history-tab')" class="nav-btn w-full flex items-center gap-4 p-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all text-sm font-bold">
                         <i class="fa-solid fa-database text-lg"></i>
                         Database
                     </button>
-
                     <button onclick="switchTab('admin-billing-tab')" class="nav-btn w-full flex items-center gap-4 p-3 rounded-xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all text-sm font-bold">
                         <i class="fa-solid fa-chart-line text-lg"></i>
                         Revenue
                     </button>
                 </nav>
             </div>
-
             <div class="mt-auto p-6">
                 <div class="bg-zinc-800 rounded-2xl p-4">
                     <p class="truncate text-xs font-bold text-zinc-400 mb-3" id="user-display-email"></p>
-
                     <button
                         onclick="logout()"
                         class="w-full bg-zinc-700 hover:bg-red-500 text-white p-3 rounded-xl transition flex justify-center items-center gap-2 text-sm font-bold"
@@ -253,25 +197,18 @@
                 </div>
             </div>
         </aside>
-
         <main class="flex-1 bg-[#F4F4F5] px-4 pt-4 pb-44 md:p-10 relative min-h-screen">
-
             <div id="request-tab" class="tab-content hidden max-w-lg md:max-w-5xl mx-auto">
-
                 <div class="mb-4 md:mb-8 text-center md:text-left">
                     <h2 class="text-2xl md:text-4xl font-black tracking-tight text-zinc-900">Where to?</h2>
                     <p class="text-zinc-500 text-xs md:text-sm font-medium mt-1">
                         Get instant internet in 150+ countries.
                     </p>
                 </div>
-
                 <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-10">
-
                     <div class="lg:col-span-3 space-y-4">
-
                         <div>
                             <div class="grid grid-cols-3 gap-2">
-
                                 <label class="dest-card cursor-pointer">
                                     <input type="radio" name="country_selection" value="Europe" class="sr-only" onclick="updateSummary()">
                                     <div class="bg-white border-2 border-transparent rounded-2xl p-3 flex flex-col items-center justify-center h-20 relative">
@@ -279,7 +216,6 @@
                                         <span class="font-bold text-zinc-600 text-[11px] text-color">Europe</span>
                                     </div>
                                 </label>
-
                                 <label class="dest-card cursor-pointer">
                                     <input type="radio" name="country_selection" value="USA" class="sr-only" onclick="updateSummary()">
                                     <div class="bg-white border-2 border-transparent rounded-2xl p-3 flex flex-col items-center justify-center h-20 relative">
@@ -287,7 +223,6 @@
                                         <span class="font-bold text-zinc-600 text-[11px] text-color">USA</span>
                                     </div>
                                 </label>
-
                                 <label class="dest-card cursor-pointer">
                                     <input type="radio" name="country_selection" value="Japan" class="sr-only" onclick="updateSummary()">
                                     <div class="bg-white border-2 border-transparent rounded-2xl p-3 flex flex-col items-center justify-center h-20 relative">
@@ -295,7 +230,6 @@
                                         <span class="font-bold text-zinc-600 text-[11px] text-color">Japan</span>
                                     </div>
                                 </label>
-
                                 <label class="dest-card cursor-pointer">
                                     <input type="radio" name="country_selection" value="Asia" class="sr-only" onclick="updateSummary()">
                                     <div class="bg-white border-2 border-transparent rounded-2xl p-3 flex flex-col items-center justify-center h-20 relative">
@@ -303,7 +237,6 @@
                                         <span class="font-bold text-zinc-600 text-[11px] text-color">Asia</span>
                                     </div>
                                 </label>
-
                                 <label class="dest-card cursor-pointer">
                                     <input type="radio" name="country_selection" value="Global" class="sr-only" onclick="updateSummary()">
                                     <div class="bg-white border-2 border-transparent rounded-2xl p-3 flex flex-col items-center justify-center h-20 relative">
@@ -311,7 +244,6 @@
                                         <span class="font-bold text-zinc-600 text-[11px] text-color">Global</span>
                                     </div>
                                 </label>
-
                                 <label class="dest-card cursor-pointer">
                                     <input type="radio" name="country_selection" value="custom" class="sr-only" onclick="updateSummary()">
                                     <div class="bg-zinc-200/50 border-2 border-transparent rounded-2xl p-3 flex flex-col items-center justify-center h-20 relative">
@@ -319,9 +251,7 @@
                                         <span class="font-bold text-zinc-500 text-[11px] text-color">Search</span>
                                     </div>
                                 </label>
-
                             </div>
-
                             <div id="custom-country-div" class="hidden mt-2 animate-slide-up">
                                 <input
                                     type="text"
@@ -332,9 +262,7 @@
                                 >
                             </div>
                         </div>
-
                         <div class="bg-white p-5 md:p-8 rounded-[2rem] shadow-sm">
-
                             <div class="flex bg-zinc-100 p-1 rounded-xl mb-6 relative">
                                 <button
                                     type="button"
@@ -344,7 +272,6 @@
                                 >
                                     Total Data
                                 </button>
-
                                 <button
                                     type="button"
                                     id="btn_type_daily"
@@ -354,21 +281,17 @@
                                     Daily Plan
                                 </button>
                             </div>
-
                             <div class="px-1">
-
                                 <div class="flex items-baseline justify-between mb-2">
                                     <div class="text-3xl md:text-4xl font-black tracking-tighter text-black" id="slider-val-display">
                                         1 GB
                                     </div>
-
                                     <div class="text-zinc-400 font-bold mb-1 text-sm">
                                         <span id="slider-type-display" class="text-[10px] uppercase tracking-widest">
                                             total plan
                                         </span>
                                     </div>
                                 </div>
-
                                 <input
                                     type="range"
                                     id="gb_slider"
@@ -379,7 +302,6 @@
                                     class="slider-black"
                                     oninput="onSliderChange()"
                                 >
-
                                 <div
                                     id="total_terms_box"
                                     class="mt-4 bg-zinc-50 border border-zinc-200/80 rounded-xl p-3 text-[11px] text-zinc-700 space-y-1.5 font-medium animate-slide-up"
@@ -388,27 +310,21 @@
                                         <i class="fa-solid fa-circle-info text-black mt-0.5"></i>
                                         Total data is valid for 24-hour after activation in the coverage area.
                                     </p>
-
                                     <p class="flex items-start gap-1.5">
                                         <i class="fa-solid fa-circle-info text-black mt-0.5"></i>
                                         Can be installed in advance. Install only when in the coverage area and ready to use to avoid early activation.
                                     </p>
                                 </div>
-
                             </div>
-
                             <div id="days_container" class="hidden mt-6 pt-6 border-t border-zinc-100 px-1 animate-slide-up">
-
                                 <div class="flex items-baseline justify-between mb-2">
                                     <div class="text-4xl font-black tracking-tighter text-orange-500" id="days-val-display">
                                         7
                                     </div>
-
                                     <div class="text-zinc-400 font-bold mb-1 uppercase tracking-widest text-xs">
                                         Days
                                     </div>
                                 </div>
-
                                 <input
                                     type="range"
                                     id="days_slider"
@@ -418,44 +334,34 @@
                                     class="slider-orange"
                                     oninput="updateSummary()"
                                 >
-
                                 <div class="mt-4 bg-orange-50 border border-orange-100 rounded-xl p-3 text-[11px] text-orange-900 space-y-1.5 font-medium">
-
                                     <p class="flex items-start gap-1.5">
                                         <i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i>
                                         High-speed data:
                                         <span id="term_gb_display">1 GB</span>/DAY.
                                         Speed will be reduced to 128kbps after the limit is reached.
                                     </p>
-
                                     <p class="flex items-start gap-1.5">
                                         <i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i>
                                         Data resets every 24 hours after activation.
                                     </p>
-
                                     <p class="flex items-start gap-1.5">
                                         <i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i>
                                         Valid for the purchased number of days. Each 24-hour period counts as 1 day.
                                     </p>
-
                                     <p class="flex items-start gap-1.5">
                                         <i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i>
                                         Can be installed in advance. Install only when in the coverage area and ready to use to avoid early activation.
                                     </p>
-
                                 </div>
                             </div>
-
                         </div>
-
                         <div
                             id="mobile-summary"
                             class="lg:hidden bg-zinc-900 rounded-2xl p-4 text-white shadow-xl mt-4 hidden animate-slide-up flex items-center justify-between gap-4"
                         >
                             <div class="flex-1 min-w-0">
-
                                 <div class="flex gap-4 text-xs">
-
                                     <div>
                                         <span class="text-zinc-500 font-bold uppercase tracking-wider block text-[9px]">
                                             Region
@@ -464,7 +370,6 @@
                                             Select Region
                                         </span>
                                     </div>
-
                                     <div>
                                         <span class="text-zinc-500 font-bold uppercase tracking-wider block text-[9px]">
                                             Plan
@@ -473,10 +378,8 @@
                                             -
                                         </span>
                                     </div>
-
                                 </div>
                             </div>
-
                             <button
                                 type="button"
                                 onclick="requestEsim()"
@@ -487,20 +390,14 @@
                                 Request
                             </button>
                         </div>
-
                     </div>
-
                     <div class="hidden lg:block lg:col-span-2">
-
                         <div class="bg-zinc-900 rounded-[2rem] p-8 text-white shadow-2xl sticky top-10">
-
                             <div class="mb-8">
                                 <h3 class="font-black text-2xl tracking-tight">Checkout</h3>
                                 <p class="text-zinc-400 text-sm mt-1">Review your plan.</p>
                             </div>
-
                             <div class="space-y-6">
-
                                 <div class="bg-zinc-800/50 rounded-2xl p-5 border border-zinc-700/50">
                                     <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-1">
                                         Destination
@@ -509,12 +406,10 @@
                                         <span class="text-zinc-600">...</span>
                                     </div>
                                 </div>
-
                                 <div class="bg-zinc-800/50 rounded-2xl p-5 border border-zinc-700/50">
                                     <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-1">
                                         Data Plan
                                     </p>
-
                                     <div id="desktop_sum_data" class="font-black text-2xl text-white" data-val="1 GB Total">
                                         1 GB
                                         <span class="text-xs font-bold text-zinc-500 tracking-widest uppercase ml-1">
@@ -522,9 +417,7 @@
                                         </span>
                                     </div>
                                 </div>
-
                             </div>
-
                             <button
                                 type="button"
                                 onclick="requestEsim()"
@@ -534,15 +427,11 @@
                             >
                                 Request eSIM
                             </button>
-
                         </div>
                     </div>
-
                 </div>
             </div>
-
             <div id="my-esims-tab" class="tab-content hidden max-w-md md:max-w-5xl mx-auto">
-
                 <div class="flex justify-between items-end mb-6 md:mb-10">
                     <div>
                         <h2 class="text-3xl md:text-4xl font-black tracking-tight text-zinc-900">
@@ -552,7 +441,6 @@
                             Your active and past eSIMs.
                         </p>
                     </div>
-
                     <button
                         onclick="loadUserRequests()"
                         class="w-10 h-10 bg-white rounded-full shadow flex items-center justify-center text-zinc-800 active:scale-90 transition"
@@ -560,16 +448,12 @@
                         <i class="fa-solid fa-rotate-right"></i>
                     </button>
                 </div>
-
                 <div
                     id="user-requests-list"
                     class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
                 ></div>
-
             </div>
-
             <div id="billing-tab" class="tab-content hidden max-w-md md:max-w-5xl mx-auto">
-
                 <div class="mb-6 md:mb-10">
                     <h2 class="text-3xl md:text-4xl font-black tracking-tight text-zinc-900">
                         Invoices
@@ -578,16 +462,12 @@
                         Monthly cost accumulation.
                     </p>
                 </div>
-
                 <div
                     id="user-billing-list"
                     class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                 ></div>
-
             </div>
-
             <div id="admin-requests-tab" class="tab-content hidden max-w-6xl mx-auto">
-
                 <div class="flex justify-between items-end mb-8">
                     <div>
                         <h2 class="text-3xl md:text-4xl font-black tracking-tight text-zinc-900">
@@ -597,7 +477,6 @@
                             New requests from users.
                         </p>
                     </div>
-
                     <button
                         onclick="loadAdminRequests()"
                         class="w-10 h-10 bg-black text-white rounded-full shadow-lg flex items-center justify-center active:scale-90 transition"
@@ -605,16 +484,12 @@
                         <i class="fa-solid fa-rotate-right"></i>
                     </button>
                 </div>
-
                 <div
                     id="admin-requests-list"
                     class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
                 ></div>
-
             </div>
-
             <div id="admin-history-tab" class="tab-content hidden max-w-6xl mx-auto">
-
                 <div class="flex justify-between items-end mb-8">
                     <div>
                         <h2 class="text-3xl md:text-4xl font-black tracking-tight text-zinc-900">
@@ -624,7 +499,6 @@
                             All processed records.
                         </p>
                     </div>
-
                     <button
                         onclick="loadAdminHistory()"
                         class="w-10 h-10 bg-white text-black rounded-full shadow flex items-center justify-center active:scale-90 transition"
@@ -632,16 +506,12 @@
                         <i class="fa-solid fa-rotate-right"></i>
                     </button>
                 </div>
-
                 <div
                     id="admin-history-list"
                     class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
                 ></div>
-
             </div>
-
             <div id="admin-billing-tab" class="tab-content hidden max-w-6xl mx-auto">
-
                 <div class="flex justify-between items-end mb-8">
                     <div>
                         <h2 class="text-3xl md:text-4xl font-black tracking-tight text-zinc-900">
@@ -651,7 +521,6 @@
                             Monthly tracking per user.
                         </p>
                     </div>
-
                     <button
                         onclick="loadAdminBilling()"
                         class="w-10 h-10 bg-white text-black rounded-full shadow flex items-center justify-center active:scale-90 transition"
@@ -659,23 +528,17 @@
                         <i class="fa-solid fa-chart-line"></i>
                     </button>
                 </div>
-
                 <div
                     id="admin-billing-records-list"
                     class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                 ></div>
-
             </div>
-
         </main>
-
         <nav
             id="mobile-bottom-nav"
             class="md:hidden fixed bottom-3 left-1/2 -translate-x-1/2 w-[72%] max-w-[280px] h-[46px] glass-dark rounded-full flex justify-around items-center z-50 px-2 border border-white/10"
         >
-
             <div id="mob-user-nav" class="w-full flex justify-between px-1 hidden">
-
                 <button
                     onclick="switchTab('request-tab')"
                     class="mob-nav-btn relative w-1/3 py-1 text-zinc-400 flex flex-col items-center rounded-full transition-all"
@@ -683,7 +546,6 @@
                     <i class="fa-solid fa-plus text-xs"></i>
                     <span class="text-[7px] font-bold uppercase tracking-widest mt-0.5">New</span>
                 </button>
-
                 <button
                     onclick="switchTab('my-esims-tab')"
                     class="mob-nav-btn relative w-1/3 py-1 text-zinc-400 flex flex-col items-center rounded-full transition-all"
@@ -691,7 +553,6 @@
                     <i class="fa-solid fa-sim-card text-xs"></i>
                     <span class="text-[7px] font-bold uppercase tracking-widest mt-0.5">eSIM</span>
                 </button>
-
                 <button
                     onclick="switchTab('billing-tab')"
                     class="mob-nav-btn relative w-1/3 py-1 text-zinc-400 flex flex-col items-center rounded-full transition-all"
@@ -699,11 +560,8 @@
                     <i class="fa-solid fa-receipt text-xs"></i>
                     <span class="text-[7px] font-bold uppercase tracking-widest mt-0.5">Bills</span>
                 </button>
-
             </div>
-
             <div id="mob-admin-nav" class="w-full flex justify-between px-1 hidden">
-
                 <button
                     onclick="switchTab('admin-requests-tab')"
                     class="mob-nav-btn relative w-1/3 py-1 text-zinc-400 flex flex-col items-center rounded-full transition-all"
@@ -711,7 +569,6 @@
                     <i class="fa-solid fa-inbox text-xs"></i>
                     <span class="text-[7px] font-bold uppercase tracking-widest mt-0.5">Inbox</span>
                 </button>
-
                 <button
                     onclick="switchTab('admin-history-tab')"
                     class="mob-nav-btn relative w-1/3 py-1 text-zinc-400 flex flex-col items-center rounded-full transition-all"
@@ -719,7 +576,6 @@
                     <i class="fa-solid fa-database text-xs"></i>
                     <span class="text-[7px] font-bold uppercase tracking-widest mt-0.5">Data</span>
                 </button>
-
                 <button
                     onclick="switchTab('admin-billing-tab')"
                     class="mob-nav-btn relative w-1/3 py-1 text-zinc-400 flex flex-col items-center rounded-full transition-all"
@@ -727,45 +583,12 @@
                     <i class="fa-solid fa-chart-line text-xs"></i>
                     <span class="text-[7px] font-bold uppercase tracking-widest mt-0.5">Rev</span>
                 </button>
-
             </div>
-
         </nav>
-
     </div>
-
     <script>
-        const pingpongVideo = document.getElementById('pingpong-video');
-        if (pingpongVideo) {
-            let forward = true;
-            pingpongVideo.addEventListener('ended', () => {
-                forward = !forward;
-            });
-            pingpongVideo.addEventListener('timeupdate', () => {
-                if (forward) {
-                    if (pingpongVideo.ended) {
-                        forward = false;
-                        pingpongVideo.playbackRate = -1;
-                        pingpongVideo.play();
-                    }
-                } else {
-                    if (pingpongVideo.currentTime <= 0.05) {
-                        forward = true;
-                        pingpongVideo.playbackRate = 1;
-                        pingpongVideo.play();
-                    }
-                }
-            });
-            pingpongVideo.addEventListener('play', () => {
-                if (!forward && pingpongVideo.playbackRate > 0) {
-                    pingpongVideo.playbackRate = -1;
-                }
-            });
-        }
-
         function getGbLabel(val) {
             let num = parseInt(val);
-
             if (currentDataType === 'total') {
                 if (num === 12) return "∞";
                 if (num === 1) return "0.5 GB";
@@ -774,30 +597,23 @@
                 return `${num} GB`;
             }
         }
-
         function updateTotalSlider(val) {
             const label = getGbLabel(val);
             document.getElementById('slider-val-display').innerText = label;
             updateSummary();
         }
-
         function onSliderChange() {
             const val = document.getElementById('gb_slider').value;
             updateTotalSlider(val);
         }
-
+        const originalUpdateSummary = window.updateSummary;
         window.updateSummary = function() {
-
             let selectedCountry = "";
-
             const radioSelected = document.querySelector(
                 'input[name="country_selection"]:checked'
             );
-
             const customDiv = document.getElementById('custom-country-div');
-
             if (radioSelected) {
-
                 if (radioSelected.value === 'custom') {
                     customDiv.classList.remove('hidden');
                     selectedCountry = document
@@ -808,21 +624,16 @@
                     customDiv.classList.add('hidden');
                     selectedCountry = radioSelected.value;
                 }
-
             } else {
                 customDiv.classList.add('hidden');
             }
-
             const dCountry = document.getElementById('desktop_sum_country');
-
             if (selectedCountry) {
                 dCountry.innerHTML = `<span class="text-white">${selectedCountry}</span>`;
             } else {
                 dCountry.innerHTML = `<span class="text-zinc-600">Select region...</span>`;
             }
-
             const mCountry = document.getElementById('mob_sum_country');
-
             if (selectedCountry) {
                 mCountry.innerText = selectedCountry;
                 mCountry.classList.replace('text-zinc-400', 'text-zinc-300');
@@ -830,60 +641,40 @@
                 mCountry.innerText = "Select Region";
                 mCountry.classList.replace('text-zinc-300', 'text-zinc-400');
             }
-
             const sliderVal = document.getElementById('gb_slider').value;
             const gbLabel = getGbLabel(sliderVal);
-
             document.getElementById('slider-val-display').innerText = gbLabel;
-
             let dataStringDesktop = "";
             let dataStringMobile = "";
-
             if (currentDataType === 'total') {
-
                 dataStringDesktop =
                     `${gbLabel} <span class="text-xs font-bold text-zinc-500 tracking-widest uppercase ml-1">Total</span>`;
-
                 dataStringMobile = `${gbLabel} Total`;
-
             } else {
-
                 const daysValue = document.getElementById('days_slider').value;
-
                 document.getElementById('days-val-display').innerText = daysValue;
-
                 const termDisplay =
                     document.getElementById('term_gb_display');
-
                 if (termDisplay) {
                     termDisplay.innerText = gbLabel;
                 }
-
                 dataStringDesktop =
                     `${gbLabel}/DAY <span class="text-xs font-bold text-zinc-500 tracking-widest uppercase ml-1">for ${daysValue}d</span>`;
-
                 dataStringMobile =
                     `${gbLabel}/DAY (${daysValue}d)`;
             }
-
             const dData = document.getElementById('desktop_sum_data');
-
             if (dData.dataset.val !== dataStringDesktop) {
-
                 dData.innerHTML = dataStringDesktop;
                 dData.dataset.val = dataStringDesktop;
-
                 if (typeof triggerAnimation === 'function') {
                     triggerAnimation(dData);
                 }
             }
-
             document.getElementById('mob_sum_data').innerText =
                 dataStringMobile;
-
             const dBtn = document.getElementById('desktop_submit_btn');
             const mBtn = document.getElementById('mob_submit_btn');
-
             if (selectedCountry !== "") {
                 dBtn.removeAttribute('disabled');
                 mBtn.removeAttribute('disabled');
@@ -891,13 +682,10 @@
                 dBtn.setAttribute('disabled', 'true');
                 mBtn.setAttribute('disabled', 'true');
             }
-
         };
-
+        const originalSetDataType = window.setDataType;
         window.setDataType = function(type) {
-
             currentDataType = type;
-
             const slider = document.getElementById('gb_slider');
             const btnTotal = document.getElementById('btn_type_total');
             const btnDaily = document.getElementById('btn_type_daily');
@@ -905,62 +693,52 @@
             const totalTermsBox = document.getElementById('total_terms_box');
             const sliderTypeDisplay =
                 document.getElementById('slider-type-display');
-
             if (type === 'total') {
-
                 btnTotal.className =
                     "flex-1 py-2 text-xs font-bold rounded-lg bg-white shadow text-black transition-all";
-
                 btnDaily.className =
                     "flex-1 py-2 text-xs font-bold rounded-lg text-zinc-500 transition-all bg-transparent";
-
                 sliderTypeDisplay.innerText = "total plan";
-
                 slider.max = "12";
                 slider.value = "2";
-
                 slider.classList.remove('slider-orange');
                 slider.classList.add('slider-black');
-
                 if (daysContainer) {
                     daysContainer.classList.add('hidden');
                 }
-
                 if (totalTermsBox) {
                     totalTermsBox.classList.remove('hidden');
                 }
-
             } else {
-
                 btnDaily.className =
                     "flex-1 py-2 text-xs font-bold rounded-lg bg-white shadow text-black transition-all";
-
                 btnTotal.className =
                     "flex-1 py-2 text-xs font-bold rounded-lg text-zinc-500 transition-all bg-transparent";
-
                 sliderTypeDisplay.innerText = "/ day";
-
                 slider.max = "10";
                 slider.value = "2";
-
                 slider.classList.add('slider-orange');
                 slider.classList.remove('slider-black');
-
                 if (daysContainer) {
                     daysContainer.classList.remove('hidden');
                 }
-
                 if (totalTermsBox) {
                     totalTermsBox.classList.add('hidden');
                 }
             }
-
             updateTotalSlider(slider.value);
         };
-
+        const rVid = document.getElementById('rostyVid');
+        if (rVid) {
+            rVid.addEventListener('timeupdate', () => {
+                if (rVid.duration && rVid.currentTime >= rVid.duration - 0.1) {
+                    rVid.playbackRate = -1;
+                } else if (rVid.currentTime <= 0.1 && rVid.playbackRate < 0) {
+                    rVid.playbackRate = 1;
+                }
+            });
+        }
     </script>
-
     <script src="app.js"></script>
-
 </body>
 </html>
