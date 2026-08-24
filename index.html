@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>eSIM Management - Friends</title>
-    <!-- Tailwind CSS (CDN for rapid development) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -43,7 +43,6 @@
         <!-- VIEW 2: USER DASHBOARD (FRIENDS) -->
         <div id="user-view" class="hidden space-y-6">
             
-            <!-- Form to request a new eSIM -->
             <div class="bg-white p-6 rounded-lg shadow-md">
                 <h3 class="text-xl font-bold mb-4 border-b pb-2">Request New eSIM</h3>
                 <form id="esim-form" onsubmit="requestEsim(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -76,7 +75,6 @@
                 </form>
             </div>
 
-            <!-- List of requested eSIMs -->
             <div class="bg-white p-6 rounded-lg shadow-md">
                 <h3 class="text-xl font-bold mb-4 border-b pb-2">My eSIMs</h3>
                 <div class="overflow-x-auto">
@@ -90,9 +88,7 @@
                                 <th class="p-2 border">Installation</th>
                             </tr>
                         </thead>
-                        <tbody id="user-requests-list">
-                            <!-- Data injected via JS -->
-                        </tbody>
+                        <tbody id="user-requests-list"></tbody>
                     </table>
                 </div>
             </div>
@@ -115,9 +111,7 @@
                                 <th class="p-2 border">Action</th>
                             </tr>
                         </thead>
-                        <tbody id="admin-requests-list">
-                            <!-- Data injected via JS -->
-                        </tbody>
+                        <tbody id="admin-requests-list"></tbody>
                     </table>
                 </div>
             </div>
@@ -125,7 +119,7 @@
 
     </div>
 
-    <!-- JS file with logic -->
+    <!-- Main Logic -->
     <script src="app.js"></script>
 </body>
 </html>
