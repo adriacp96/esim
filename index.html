@@ -180,6 +180,7 @@
                                 </div>
                                 <input type="range" id="gb_slider" min="1" max="12" step="1" value="2" class="slider-black" oninput="updateTotalSlider(this.value)">
                                 
+                                <!-- Total Data Terms Box -->
                                 <div id="total_terms_box" class="mt-4 bg-zinc-50 border border-zinc-200/80 rounded-xl p-3 text-[11px] text-zinc-700 space-y-1.5 font-medium">
                                     <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-black mt-0.5"></i> Total data is valid for 24-hour after activation in the coverage area.</p>
                                     <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-black mt-0.5"></i> Can be installed in advance. Install only when in the coverage area and ready to use to avoid early activation.</p>
@@ -193,6 +194,7 @@
                                 </div>
                                 <input type="range" id="days_slider" min="1" max="30" value="7" class="slider-orange" oninput="updateSummary()">
                                 
+                                <!-- Daily Plan Terms Box -->
                                 <div class="mt-4 bg-orange-50 border border-orange-100 rounded-xl p-3 text-[11px] text-orange-900 space-y-1.5 font-medium">
                                     <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i> High-speed data: <span id="term_gb_display">1 GB</span>/day. Speed will be reduced to 128kbps after the limit is reached.</p>
                                     <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i> Data resets every 24 hours after activation.</p>
@@ -319,7 +321,6 @@
     </div>
 
     <script>
-        // Maps total slider index (1 to 12) to: 0.5 GB, 1 GB, 2 GB, ..., 10 GB, ∞
         function getGbLabel(val) {
             let num = parseInt(val);
             if (num === 12) return "∞";
@@ -391,12 +392,16 @@
         window.setDataType = function(type) {
             if(typeof originalSetDataType === 'function') originalSetDataType(type);
             const slider = document.getElementById('gb_slider');
+            const totalTermsBox = document.getElementById('total_terms_box');
+            
             if(type === 'total') {
                 slider.max = "12";
                 slider.value = "2"; // default to 1 GB
+                if(totalTermsBox) totalTermsBox.classList.remove('hidden');
             } else {
                 slider.max = "10";
                 slider.value = "2"; // default to 1 GB/day
+                if(totalTermsBox) totalTermsBox.classList.add('hidden');
             }
             updateTotalSlider(slider.value);
         };
