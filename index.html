@@ -321,7 +321,7 @@
     <script>
         function getGbLabel(val) {
             let num = parseInt(val);
-            if (num === 12) return "∞"; // Step 12 = Unlimited
+            if (num === 12) return "∞"; // Step 12 = Unlimited symbol
             if (num === 1) return "0.5 GB"; // Step 1 = 0.5 GB
             return `${num - 1} GB`; // Steps 2 to 11 = 1 GB through 10 GB
         }
