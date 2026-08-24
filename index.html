@@ -938,7 +938,7 @@
             updateTotalSlider(slider.value);
         };
 
-        // Custom Script for rosty.mov loop (aft fwd fwd aft) with poster fallback and fade-in
+        // Custom Script for rosty.mov loop (aft fwd fwd aft) at normal speed with poster fallback and fade-in
         document.addEventListener('DOMContentLoaded', () => {
             const video = document.getElementById('rosty-video');
             if (!video) return;
@@ -977,9 +977,10 @@
                             reversingInterval = null;
                             advanceSequence();
                         } else {
-                            video.currentTime -= 0.05;
+                            // Normal matching speed for reverse playback
+                            video.currentTime -= 0.15;
                         }
-                    }, 30);
+                    }, 20);
                 }
             }
 
@@ -989,7 +990,6 @@
             }
 
             video.addEventListener('loadeddata', () => {
-                // Fade into the video once data is ready
                 video.classList.remove('opacity-0');
                 playSequence();
             });
