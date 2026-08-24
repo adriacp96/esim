@@ -27,7 +27,6 @@
         input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.1); }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #e5e7eb; border-radius: 9999px; }
         
-        /* Orange thumb for the days slider */
         input[type=range].slider-orange::-webkit-slider-thumb { background: #f97316; box-shadow: 0 2px 6px rgba(249, 115, 22, 0.4); }
 
         @keyframes popIn { 0% { transform: scale(0.9); opacity: 0.5; color: #60a5fa; } 50% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
@@ -82,6 +81,7 @@
             <nav id="admin-nav" class="flex-1 p-4 space-y-2 hidden">
                 <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-3 px-3">Admin Dashboard</p>
                 <button onclick="switchTab('admin-requests-tab')" class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition text-left text-sm font-medium"><i class="fa-solid fa-inbox w-5"></i> Manage Requests</button>
+                <button onclick="switchTab('admin-history-tab')" class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition text-left text-sm font-medium"><i class="fa-solid fa-clock-rotate-left w-5"></i> All eSIMs History</button>
                 <button onclick="switchTab('admin-billing-tab')" class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition text-left text-sm font-medium"><i class="fa-solid fa-calculator w-5"></i> Manage Billing</button>
             </nav>
 
@@ -266,7 +266,7 @@
                 </div>
             </div>
 
-            <!-- ADMIN: MANAGE REQUESTS TAB -->
+            <!-- ADMIN: MANAGE REQUESTS TAB (Actionable) -->
             <div id="admin-requests-tab" class="tab-content hidden max-w-6xl mx-auto">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="text-3xl font-bold text-purple-900"><i class="fa-solid fa-network-wired mr-2 text-purple-600"></i> Requests Management</h2>
@@ -290,7 +290,7 @@
                     </div>
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 border-l-4 border-l-green-500 flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-gray-500 font-bold uppercase tracking-wider">Approved</p>
+                            <p class="text-sm text-gray-500 font-bold uppercase tracking-wider">Approved (Total)</p>
                             <h4 class="text-3xl font-black text-gray-800 mt-1" id="stat-approved">0</h4>
                         </div>
                         <i class="fa-solid fa-circle-check text-4xl text-green-200"></i>
@@ -308,6 +308,32 @@
                             </tr>
                         </thead>
                         <tbody id="admin-requests-list" class="divide-y divide-gray-100 text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ADMIN: HISTORY TAB (All eSIMs) -->
+            <div id="admin-history-tab" class="tab-content hidden max-w-6xl mx-auto">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-3xl font-bold text-gray-900"><i class="fa-solid fa-clock-rotate-left mr-2 text-gray-600"></i> All eSIMs History</h2>
+                        <p class="text-gray-500 text-sm mt-1">View, manage, or delete all requests (approved, denied, etc).</p>
+                    </div>
+                    <button onclick="loadAdminHistory()" class="text-gray-600 hover:text-gray-800 bg-gray-200 px-3 py-1 rounded text-sm font-bold transition"><i class="fa-solid fa-rotate-right mr-1"></i> Refresh</button>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-100 text-gray-700 text-sm border-b border-gray-200">
+                            <tr>
+                                <th class="p-5 font-bold uppercase tracking-wider text-xs">Date / User</th>
+                                <th class="p-5 font-bold uppercase tracking-wider text-xs">Destination & Plan</th>
+                                <th class="p-5 font-bold uppercase tracking-wider text-xs">Status</th>
+                                <th class="p-5 font-bold uppercase tracking-wider text-xs">Link/QR</th>
+                                <th class="p-5 font-bold uppercase tracking-wider text-xs text-right">Delete</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-history-list" class="divide-y divide-gray-100 text-sm"></tbody>
                     </table>
                 </div>
             </div>
