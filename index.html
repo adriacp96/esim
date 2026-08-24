@@ -194,7 +194,7 @@
                                 <input type="range" id="days_slider" min="1" max="30" value="7" class="slider-orange" oninput="updateSummary()">
                                 
                                 <div class="mt-4 bg-orange-50 border border-orange-100 rounded-xl p-3 text-[11px] text-orange-900 space-y-1.5 font-medium">
-                                    <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i> High-speed data: <span id="term_gb_display">1 GB</span>/GB/DAY. Speed will be reduced to 128kbps after the limit is reached.</p>
+                                    <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i> High-speed data: <span id="term_gb_display">1 GB</span>/DAY. Speed will be reduced to 128kbps after the limit is reached.</p>
                                     <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i> Data resets every 24 hours after activation.</p>
                                     <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i> Valid for the purchased number of days. Each 24-hour period counts as 1 day.</p>
                                     <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i> Can be installed in advance. Install only when in the coverage area and ready to use to avoid early activation.</p>
@@ -303,7 +303,6 @@
 
         </main>
 
-        <!-- Mobile menu bar with fully rounded corners (rounded-full) matching the outer container layout -->
         <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-3 left-1/2 -translate-x-1/2 w-[72%] max-w-[280px] h-[46px] glass-dark rounded-full flex justify-around items-center z-50 px-2 border border-white/10">
             <div id="mob-user-nav" class="w-full flex justify-between px-1 hidden">
                 <button onclick="switchTab('request-tab')" class="mob-nav-btn relative w-1/3 py-1 text-zinc-400 flex flex-col items-center rounded-full transition-all"><i class="fa-solid fa-plus text-xs"></i><span class="text-[7px] font-bold uppercase tracking-widest mt-0.5">New</span></button>
@@ -369,8 +368,8 @@
                 const daysValue = document.getElementById('days_slider').value;
                 document.getElementById('days-val-display').innerText = daysValue;
                 document.getElementById('term_gb_display').innerText = gbLabel;
-                dataStringDesktop = `${gbLabel}/GB/DAY <span class="text-xs font-bold text-zinc-500 tracking-widest uppercase ml-1">for ${daysValue}d</span>`;
-                dataStringMobile = `${gbLabel}/GB/DAY (${daysValue}d)`;
+                dataStringDesktop = `${gbLabel}/DAY <span class="text-xs font-bold text-zinc-500 tracking-widest uppercase ml-1">for ${daysValue}d</span>`;
+                dataStringMobile = `${gbLabel}/DAY (${daysValue}d)`;
             }
             
             const dData = document.getElementById('desktop_sum_data');
