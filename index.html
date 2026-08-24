@@ -180,8 +180,7 @@
                                 </div>
                                 <input type="range" id="gb_slider" min="1" max="12" step="1" value="2" class="slider-black" oninput="updateTotalSlider(this.value)">
                                 
-                                <!-- Total Data Terms Box -->
-                                <div id="total_terms_box" class="mt-4 bg-zinc-50 border border-zinc-200/80 rounded-xl p-3 text-[11px] text-zinc-700 space-y-1.5 font-medium">
+                                <div id="total_terms_box" class="mt-4 bg-zinc-50 border border-zinc-200/80 rounded-xl p-3 text-[11px] text-zinc-700 space-y-1.5 font-medium animate-slide-up">
                                     <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-black mt-0.5"></i> Total data is valid for 24-hour after activation in the coverage area.</p>
                                     <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-black mt-0.5"></i> Can be installed in advance. Install only when in the coverage area and ready to use to avoid early activation.</p>
                                 </div>
@@ -194,9 +193,8 @@
                                 </div>
                                 <input type="range" id="days_slider" min="1" max="30" value="7" class="slider-orange" oninput="updateSummary()">
                                 
-                                <!-- Daily Plan Terms Box -->
                                 <div class="mt-4 bg-orange-50 border border-orange-100 rounded-xl p-3 text-[11px] text-orange-900 space-y-1.5 font-medium">
-                                    <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i> High-speed data: <span id="term_gb_display">1 GB</span>/day. Speed will be reduced to 128kbps after the limit is reached.</p>
+                                    <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i> High-speed data: <span id="term_gb_display">1 GB</span>/DAY. Speed will be reduced to 128kbps after the limit is reached.</p>
                                     <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i> Data resets every 24 hours after activation.</p>
                                     <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i> Valid for the purchased number of days. Each 24-hour period counts as 1 day.</p>
                                     <p class="flex items-start gap-1.5"><i class="fa-solid fa-circle-info text-orange-500 mt-0.5"></i> Can be installed in advance. Install only when in the coverage area and ready to use to avoid early activation.</p>
@@ -370,8 +368,8 @@
                 const daysValue = document.getElementById('days_slider').value;
                 document.getElementById('days-val-display').innerText = daysValue;
                 document.getElementById('term_gb_display').innerText = gbLabel;
-                dataStringDesktop = `${gbLabel} <span class="text-xs font-bold text-zinc-500 tracking-widest uppercase ml-1">/ day for ${daysValue}d</span>`;
-                dataStringMobile = `${gbLabel}/d (${daysValue}d)`;
+                dataStringDesktop = `${gbLabel}/GB/DAY <span class="text-xs font-bold text-zinc-500 tracking-widest uppercase ml-1">for ${daysValue}d</span>`;
+                dataStringMobile = `${gbLabel}/GB/DAY (${daysValue}d)`;
             }
             
             const dData = document.getElementById('desktop_sum_data');
