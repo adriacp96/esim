@@ -3,53 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>eSIM Portal</title>
+    <title>eSIM App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        .dest-card input[type="radio"]:checked + div {
-            border-color: #2563eb; background-color: #eff6ff;
-            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1);
-        }
-        .dest-card input[type="radio"]:checked + div .check-icon { opacity: 1; transform: scale(1); }
-        .check-icon { transform: scale(0.5); transition: all 0.2s; }
+        body { font-family: 'Inter', sans-serif; background-color: #f4f4f5; }
         
-        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none; height: 28px; width: 28px; border-radius: 50%;
-            background: #2563eb; cursor: pointer; margin-top: -10px; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.4);
+        /* Premium Radio Cards */
+        .dest-card input[type="radio"]:checked + div {
+            border-color: #000; background-color: #000; color: white;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            transform: scale(0.98);
         }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; background: #e5e7eb; border-radius: 9999px; }
-        input[type=range].slider-orange::-webkit-slider-thumb { background: #f97316; box-shadow: 0 2px 6px rgba(249, 115, 22, 0.4); }
+        .dest-card input[type="radio"]:checked + div .icon-color { color: white; }
+        .dest-card input[type="radio"]:checked + div .text-color { color: white; }
+        .dest-card div { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        /* iOS style Sliders */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; margin: 10px 0; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 32px; width: 32px; border-radius: 50%;
+            background: #fff; border: 2px solid #e4e4e7; cursor: pointer; margin-top: -12px; 
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:active { transform: scale(1.1); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; background: #e4e4e7; border-radius: 9999px; }
+        input[type=range]:focus::-webkit-slider-runnable-track { background: #d4d4d8; }
+        
+        /* Active track coloring trick */
+        .slider-black::-webkit-slider-thumb { border-color: #000; }
+        .slider-orange::-webkit-slider-thumb { border-color: #f97316; }
 
-        @keyframes popIn { 0% { transform: scale(0.9); opacity: 0.5; } 50% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
-        .animate-pop { animation: popIn 0.3s forwards; display: inline-block; }
+        /* Animations */
+        @keyframes slideUp { 0% { transform: translateY(20px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+        .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        @keyframes pop { 0% { transform: scale(0.95); opacity: 0.8; } 50% { transform: scale(1.02); } 100% { transform: scale(1); opacity: 1; } }
+        .animate-pop { animation: pop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        /* Glassmorphism */
+        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+        .glass-dark { background: rgba(24, 24, 27, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans h-screen flex flex-col md:flex-row overflow-hidden selection:bg-blue-100">
+<body class="text-zinc-800 flex flex-col md:flex-row overflow-hidden selection:bg-zinc-200">
 
-    <div id="toast-container" class="fixed top-4 left-4 right-4 md:left-auto md:w-96 z-[9999] flex flex-col gap-2"></div>
+    <div id="toast-container" class="fixed top-4 left-4 right-4 md:left-auto md:w-96 z-[9999] flex flex-col gap-3"></div>
 
     <!-- VIEW 1: AUTH -->
-    <div id="auth-view" class="w-full h-full flex items-center justify-center bg-gray-900 absolute z-40 p-4">
-        <div class="bg-white p-6 md:p-8 rounded-3xl shadow-2xl w-full max-w-md">
-            <div class="text-center mb-6">
-                <i class="fa-solid fa-sim-card text-4xl text-blue-600 mb-2"></i>
-                <h2 class="text-2xl font-bold text-gray-800">eSIM Portal</h2>
+    <div id="auth-view" class="w-full h-full flex items-center justify-center bg-zinc-100 absolute z-40 p-4">
+        <div class="bg-white p-8 md:p-10 rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] w-full max-w-md animate-slide-up border border-white">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-black text-white rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl transform rotate-3">
+                    <i class="fa-solid fa-sim-card text-4xl"></i>
+                </div>
+                <h2 class="text-3xl font-black tracking-tight text-zinc-900">eSIM App</h2>
+                <p class="text-sm text-zinc-500 font-medium mt-1">Connect anywhere in seconds.</p>
             </div>
-            <form id="auth-form" onsubmit="event.preventDefault();" class="space-y-4">
+            <form id="auth-form" onsubmit="event.preventDefault();" class="space-y-5">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
-                    <input type="email" id="email" class="w-full border-gray-300 rounded-xl p-3 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                    <input type="email" id="email" class="w-full border-0 bg-zinc-100/80 rounded-2xl p-4 font-medium focus:bg-zinc-200 focus:ring-2 focus:ring-black outline-none transition" placeholder="Email address" required>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
-                    <input type="password" id="password" class="w-full border-gray-300 rounded-xl p-3 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                    <input type="password" id="password" class="w-full border-0 bg-zinc-100/80 rounded-2xl p-4 font-medium focus:bg-zinc-200 focus:ring-2 focus:ring-black outline-none transition" placeholder="Password" required>
                 </div>
-                <div class="flex gap-2 pt-2">
-                    <button type="button" onclick="login()" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl active:scale-95 transition">Login</button>
-                    <button type="button" onclick="register()" class="flex-1 bg-gray-200 text-gray-800 font-bold py-3 rounded-xl active:scale-95 transition">Register</button>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="login()" class="flex-1 bg-black text-white font-bold py-4 rounded-2xl active:scale-95 transition-all shadow-lg shadow-black/20">Sign In</button>
+                    <button type="button" onclick="register()" class="flex-1 bg-white border-2 border-zinc-200 text-zinc-800 font-bold py-4 rounded-2xl active:scale-95 transition-all">Create Account</button>
                 </div>
             </form>
         </div>
@@ -58,130 +83,120 @@
     <!-- MAIN LAYOUT -->
     <div id="app-layout" class="hidden w-full h-full flex flex-col md:flex-row z-10 relative">
         
-        <!-- MOBILE HEADER -->
-        <header class="md:hidden bg-gray-900 text-white p-4 flex justify-between items-center shadow-md z-20">
-            <div class="flex items-center gap-2 font-bold text-lg"><i class="fa-solid fa-sim-card text-blue-400"></i> eSIM Portal</div>
-            <button onclick="logout()" class="text-red-400 text-sm font-bold bg-gray-800 px-3 py-1.5 rounded-lg"><i class="fa-solid fa-power-off"></i></button>
-        </header>
-
         <!-- DESKTOP SIDEBAR -->
-        <aside class="hidden md:flex w-64 bg-gray-900 text-white flex-col h-full shadow-xl z-20">
-            <div class="p-6 text-center border-b border-gray-800">
-                <i class="fa-solid fa-sim-card text-3xl text-blue-400 mb-2"></i>
-                <h1 class="text-xl font-bold mt-2">eSIM Portal</h1>
+        <aside class="hidden md:flex w-72 bg-zinc-900 text-white flex-col h-full z-20">
+            <div class="p-8 pb-4">
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-10 h-10 bg-white text-black rounded-xl flex items-center justify-center shadow-lg"><i class="fa-solid fa-sim-card text-xl"></i></div>
+                    <h1 class="text-2xl font-black tracking-tight">eSIM App</h1>
+                </div>
+                
+                <nav id="desktop-user-nav" class="space-y-2 hidden">
+                    <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-3 px-2">Menu</p>
+                    <button onclick="switchTab('request-tab')" class="nav-btn w-full flex items-center gap-4 p-4 rounded-2xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all text-sm font-bold"><i class="fa-solid fa-earth-americas text-lg"></i> Get Data</button>
+                    <button onclick="switchTab('my-esims-tab')" class="nav-btn w-full flex items-center gap-4 p-4 rounded-2xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all text-sm font-bold"><i class="fa-solid fa-wallet text-lg"></i> My eSIMs</button>
+                    <button onclick="switchTab('billing-tab')" class="nav-btn w-full flex items-center gap-4 p-4 rounded-2xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all text-sm font-bold"><i class="fa-solid fa-receipt text-lg"></i> Billing</button>
+                </nav>
+
+                <nav id="desktop-admin-nav" class="space-y-2 hidden">
+                    <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-3 px-2">Workspace</p>
+                    <button onclick="switchTab('admin-requests-tab')" class="nav-btn w-full flex items-center gap-4 p-4 rounded-2xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all text-sm font-bold"><i class="fa-solid fa-inbox text-lg"></i> Requests</button>
+                    <button onclick="switchTab('admin-history-tab')" class="nav-btn w-full flex items-center gap-4 p-4 rounded-2xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all text-sm font-bold"><i class="fa-solid fa-database text-lg"></i> Database</button>
+                    <button onclick="switchTab('admin-billing-tab')" class="nav-btn w-full flex items-center gap-4 p-4 rounded-2xl text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all text-sm font-bold"><i class="fa-solid fa-chart-line text-lg"></i> Revenue</button>
+                </nav>
             </div>
-            
-            <nav id="desktop-user-nav" class="flex-1 p-4 space-y-2 hidden">
-                <button onclick="switchTab('request-tab')" class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 text-left text-sm font-medium"><i class="fa-solid fa-earth-americas w-5"></i> Get eSIM</button>
-                <button onclick="switchTab('my-esims-tab')" class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 text-left text-sm font-medium"><i class="fa-solid fa-sim-card w-5"></i> My eSIMs</button>
-                <button onclick="switchTab('billing-tab')" class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 text-left text-sm font-medium"><i class="fa-solid fa-file-invoice-dollar w-5"></i> Billing</button>
-            </nav>
 
-            <nav id="desktop-admin-nav" class="flex-1 p-4 space-y-2 hidden">
-                <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mb-3 px-3">Admin Panel</p>
-                <button onclick="switchTab('admin-requests-tab')" class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 text-left text-sm font-medium"><i class="fa-solid fa-inbox w-5"></i> Manage</button>
-                <button onclick="switchTab('admin-history-tab')" class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 text-left text-sm font-medium"><i class="fa-solid fa-clock-rotate-left w-5"></i> History</button>
-                <button onclick="switchTab('admin-billing-tab')" class="nav-btn w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 text-left text-sm font-medium"><i class="fa-solid fa-file-invoice w-5"></i> Bills</button>
-            </nav>
-
-            <div class="p-4 border-t border-gray-800 text-sm">
-                <p class="truncate text-gray-400 mb-3" id="user-display-email"></p>
-                <button onclick="logout()" class="w-full bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white p-2 rounded transition flex justify-center items-center gap-2"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+            <div class="mt-auto p-6">
+                <div class="bg-zinc-800 rounded-2xl p-4">
+                    <p class="truncate text-xs font-bold text-zinc-400 mb-3" id="user-display-email"></p>
+                    <button onclick="logout()" class="w-full bg-zinc-700 hover:bg-red-500 text-white p-3 rounded-xl transition flex justify-center items-center gap-2 text-sm font-bold"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out</button>
+                </div>
             </div>
         </aside>
 
         <!-- MAIN CONTENT AREA -->
-        <main class="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-8 pb-36 md:pb-8 relative">
+        <main class="flex-1 overflow-y-auto bg-[#F4F4F5] px-4 pt-6 pb-40 md:p-10 relative">
             
             <!-- REQUEST TAB -->
-            <div id="request-tab" class="tab-content hidden max-w-5xl mx-auto">
-                <div class="mb-4 md:mb-8">
-                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900">Destination</h2>
-                    <p class="text-gray-500 text-sm mt-1">Select where you are traveling.</p>
+            <div id="request-tab" class="tab-content hidden max-w-lg mx-auto md:max-w-5xl">
+                <div class="mb-6 md:mb-10 text-center md:text-left">
+                    <h2 class="text-3xl md:text-4xl font-black tracking-tight text-zinc-900">Where to?</h2>
+                    <p class="text-zinc-500 font-medium mt-2">Get instant internet in 150+ countries.</p>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 md:gap-10">
                     
-                    <div class="lg:col-span-2 space-y-4 md:space-y-8">
+                    <div class="lg:col-span-3 space-y-6">
                         <!-- Step 1: Destination -->
-                        <div class="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100">
-                            <h3 class="text-base md:text-lg font-bold mb-3 md:mb-4 flex items-center gap-2">Select Region</h3>
-                            <div class="grid grid-cols-3 gap-2 md:gap-4 mb-2">
+                        <div>
+                            <div class="grid grid-cols-3 gap-3">
                                 <label class="dest-card cursor-pointer">
                                     <input type="radio" name="country_selection" value="Europe" class="sr-only" onclick="updateSummary()">
-                                    <div class="border-2 border-gray-200 rounded-xl p-2 md:p-4 text-center relative h-full flex flex-col justify-center bg-white">
-                                        <i class="fa-solid fa-earth-europe text-xl md:text-3xl text-gray-400 mb-1 md:mb-2"></i>
-                                        <span class="font-bold text-gray-700 text-xs md:text-base">Europe</span>
-                                        <i class="fa-solid fa-circle-check check-icon text-blue-600 absolute top-1 right-1 opacity-0"></i>
+                                    <div class="bg-white border-2 border-transparent rounded-[1.5rem] p-4 flex flex-col items-center justify-center h-28 relative">
+                                        <i class="fa-solid fa-earth-europe text-3xl text-zinc-300 mb-2 icon-color"></i>
+                                        <span class="font-bold text-zinc-600 text-xs text-color">Europe</span>
                                     </div>
                                 </label>
                                 <label class="dest-card cursor-pointer">
                                     <input type="radio" name="country_selection" value="USA" class="sr-only" onclick="updateSummary()">
-                                    <div class="border-2 border-gray-200 rounded-xl p-2 md:p-4 text-center relative h-full flex flex-col justify-center bg-white">
-                                        <i class="fa-solid fa-flag-usa text-xl md:text-3xl text-gray-400 mb-1 md:mb-2"></i>
-                                        <span class="font-bold text-gray-700 text-xs md:text-base">USA</span>
-                                        <i class="fa-solid fa-circle-check check-icon text-blue-600 absolute top-1 right-1 opacity-0"></i>
+                                    <div class="bg-white border-2 border-transparent rounded-[1.5rem] p-4 flex flex-col items-center justify-center h-28 relative">
+                                        <i class="fa-solid fa-flag-usa text-3xl text-zinc-300 mb-2 icon-color"></i>
+                                        <span class="font-bold text-zinc-600 text-xs text-color">USA</span>
                                     </div>
                                 </label>
                                 <label class="dest-card cursor-pointer">
                                     <input type="radio" name="country_selection" value="Japan" class="sr-only" onclick="updateSummary()">
-                                    <div class="border-2 border-gray-200 rounded-xl p-2 md:p-4 text-center relative h-full flex flex-col justify-center bg-white">
-                                        <i class="fa-solid fa-torii-gate text-xl md:text-3xl text-gray-400 mb-1 md:mb-2"></i>
-                                        <span class="font-bold text-gray-700 text-xs md:text-base">Japan</span>
-                                        <i class="fa-solid fa-circle-check check-icon text-blue-600 absolute top-1 right-1 opacity-0"></i>
+                                    <div class="bg-white border-2 border-transparent rounded-[1.5rem] p-4 flex flex-col items-center justify-center h-28 relative">
+                                        <i class="fa-solid fa-torii-gate text-3xl text-zinc-300 mb-2 icon-color"></i>
+                                        <span class="font-bold text-zinc-600 text-xs text-color">Japan</span>
                                     </div>
                                 </label>
                                 <label class="dest-card cursor-pointer">
                                     <input type="radio" name="country_selection" value="Asia" class="sr-only" onclick="updateSummary()">
-                                    <div class="border-2 border-gray-200 rounded-xl p-2 md:p-4 text-center relative h-full flex flex-col justify-center bg-white">
-                                        <i class="fa-solid fa-earth-asia text-xl md:text-3xl text-gray-400 mb-1 md:mb-2"></i>
-                                        <span class="font-bold text-gray-700 text-xs md:text-base">Asia</span>
-                                        <i class="fa-solid fa-circle-check check-icon text-blue-600 absolute top-1 right-1 opacity-0"></i>
+                                    <div class="bg-white border-2 border-transparent rounded-[1.5rem] p-4 flex flex-col items-center justify-center h-28 relative">
+                                        <i class="fa-solid fa-earth-asia text-3xl text-zinc-300 mb-2 icon-color"></i>
+                                        <span class="font-bold text-zinc-600 text-xs text-color">Asia</span>
                                     </div>
                                 </label>
                                 <label class="dest-card cursor-pointer">
                                     <input type="radio" name="country_selection" value="Global" class="sr-only" onclick="updateSummary()">
-                                    <div class="border-2 border-gray-200 rounded-xl p-2 md:p-4 text-center relative h-full flex flex-col justify-center bg-white">
-                                        <i class="fa-solid fa-globe text-xl md:text-3xl text-gray-400 mb-1 md:mb-2"></i>
-                                        <span class="font-bold text-gray-700 text-xs md:text-base">Global</span>
-                                        <i class="fa-solid fa-circle-check check-icon text-blue-600 absolute top-1 right-1 opacity-0"></i>
+                                    <div class="bg-white border-2 border-transparent rounded-[1.5rem] p-4 flex flex-col items-center justify-center h-28 relative">
+                                        <i class="fa-solid fa-globe text-3xl text-zinc-300 mb-2 icon-color"></i>
+                                        <span class="font-bold text-zinc-600 text-xs text-color">Global</span>
                                     </div>
                                 </label>
                                 <label class="dest-card cursor-pointer">
                                     <input type="radio" name="country_selection" value="custom" class="sr-only" onclick="updateSummary()">
-                                    <div class="border-2 border-gray-200 rounded-xl p-2 md:p-4 text-center relative h-full flex flex-col justify-center bg-gray-50">
-                                        <i class="fa-solid fa-magnifying-glass text-xl md:text-3xl text-gray-400 mb-1 md:mb-2"></i>
-                                        <span class="font-bold text-gray-600 text-xs md:text-base">Other</span>
-                                        <i class="fa-solid fa-circle-check check-icon text-blue-600 absolute top-1 right-1 opacity-0"></i>
+                                    <div class="bg-zinc-200/50 border-2 border-transparent rounded-[1.5rem] p-4 flex flex-col items-center justify-center h-28 relative">
+                                        <i class="fa-solid fa-magnifying-glass text-xl text-zinc-400 mb-2 icon-color"></i>
+                                        <span class="font-bold text-zinc-500 text-xs text-color">Search</span>
                                     </div>
                                 </label>
                             </div>
-                            <div id="custom-country-div" class="hidden mt-2 pt-2 md:mt-4 md:pt-4 border-t border-gray-100">
-                                <input type="text" id="custom_country_input" class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-blue-500" placeholder="Type country name..." oninput="updateSummary()">
+                            <div id="custom-country-div" class="hidden mt-3 animate-slide-up">
+                                <input type="text" id="custom_country_input" class="w-full border-0 bg-white shadow-sm rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-black" placeholder="Where exactly? (e.g. Brazil)" oninput="updateSummary()">
                             </div>
                         </div>
 
                         <!-- Step 2: Data Package -->
-                        <div class="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100">
-                            <h3 class="text-base md:text-lg font-bold mb-3 flex items-center gap-2">Data Package</h3>
-                            
-                            <div class="flex bg-gray-100 p-1 rounded-lg mb-6">
-                                <button type="button" id="btn_type_total" onclick="setDataType('total')" class="flex-1 py-1.5 text-sm font-bold rounded-md bg-white shadow-sm text-blue-700 transition">Total GB</button>
-                                <button type="button" id="btn_type_daily" onclick="setDataType('daily')" class="flex-1 py-1.5 text-sm font-bold rounded-md text-gray-500 transition">GB / Day</button>
+                        <div class="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm">
+                            <div class="flex bg-zinc-100 p-1 rounded-2xl mb-8 relative">
+                                <button type="button" id="btn_type_total" onclick="setDataType('total')" class="flex-1 py-3 text-sm font-bold rounded-xl bg-white shadow text-black transition-all">Total Data</button>
+                                <button type="button" id="btn_type_daily" onclick="setDataType('daily')" class="flex-1 py-3 text-sm font-bold rounded-xl text-zinc-500 transition-all">Daily Plan</button>
                             </div>
                             
                             <div class="px-1">
-                                <div class="flex items-end justify-between mb-3">
-                                    <div class="text-4xl md:text-5xl font-black text-blue-600 tracking-tighter leading-none" id="slider-val-display">5</div>
-                                    <div class="text-gray-400 text-sm md:text-lg font-medium">GB <span id="slider-type-display" class="text-xs md:text-sm">total</span></div>
+                                <div class="flex items-baseline justify-between mb-4">
+                                    <div class="text-5xl font-black tracking-tighter text-black" id="slider-val-display">5</div>
+                                    <div class="text-zinc-400 font-bold mb-1">GB <span id="slider-type-display" class="text-xs uppercase tracking-widest">total</span></div>
                                 </div>
-                                <input type="range" id="gb_slider" min="1" max="50" value="5" oninput="updateSummary()">
+                                <input type="range" id="gb_slider" min="1" max="50" value="5" class="slider-black" oninput="updateSummary()">
                             </div>
 
-                            <div id="days_container" class="hidden mt-6 pt-6 border-t border-gray-100 px-1">
-                                <div class="flex items-end justify-between mb-3">
-                                    <div class="text-4xl md:text-5xl font-black text-orange-500 tracking-tighter leading-none" id="days-val-display">7</div>
-                                    <div class="text-gray-400 text-sm md:text-lg font-medium">Days</div>
+                            <div id="days_container" class="hidden mt-8 pt-8 border-t border-zinc-100 px-1 animate-slide-up">
+                                <div class="flex items-baseline justify-between mb-4">
+                                    <div class="text-5xl font-black tracking-tighter text-orange-500" id="days-val-display">7</div>
+                                    <div class="text-zinc-400 font-bold mb-1 uppercase tracking-widest text-xs">Days</div>
                                 </div>
                                 <input type="range" id="days_slider" min="1" max="30" value="7" class="slider-orange" oninput="updateSummary()">
                             </div>
@@ -189,123 +204,118 @@
                     </div>
 
                     <!-- DESKTOP ORDER SUMMARY -->
-                    <div class="hidden lg:block">
-                        <div class="bg-gray-900 rounded-2xl shadow-xl text-white sticky top-8">
-                            <div class="p-6 border-b border-gray-800 bg-gray-900 z-10 relative">
-                                <h3 class="font-bold text-lg">Order Summary</h3>
+                    <div class="hidden lg:block lg:col-span-2">
+                        <div class="bg-zinc-900 rounded-[2rem] p-8 text-white shadow-2xl sticky top-10">
+                            <div class="mb-8">
+                                <h3 class="font-black text-2xl tracking-tight">Checkout</h3>
+                                <p class="text-zinc-400 text-sm mt-1">Review your plan.</p>
                             </div>
-                            <div class="p-6 space-y-6">
-                                <div>
-                                    <p class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Destination</p>
-                                    <div class="font-bold text-xl flex items-center gap-3">
-                                        <i class="fa-solid fa-location-dot text-blue-400"></i> 
-                                        <div id="desktop_sum_country" data-val=""><span class="text-gray-500 font-normal">Select region...</span></div>
-                                    </div>
+                            <div class="space-y-6">
+                                <div class="bg-zinc-800/50 rounded-2xl p-5 border border-zinc-700/50">
+                                    <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-1">Destination</p>
+                                    <div id="desktop_sum_country" class="font-bold text-xl" data-val=""><span class="text-zinc-600">...</span></div>
                                 </div>
-                                <div>
-                                    <p class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Data Plan</p>
-                                    <div class="font-bold text-2xl flex items-center gap-3">
-                                        <i class="fa-solid fa-wifi text-blue-400"></i>
-                                        <div id="desktop_sum_data" data-val="5 GB (Total)">5 GB <span class="text-sm font-normal text-gray-300">(Total)</span></div>
-                                    </div>
+                                <div class="bg-zinc-800/50 rounded-2xl p-5 border border-zinc-700/50">
+                                    <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-1">Data Plan</p>
+                                    <div id="desktop_sum_data" class="font-black text-2xl text-white" data-val="5 GB (Total)">5 GB <span class="text-xs font-bold text-zinc-500 tracking-widest uppercase ml-1">Total</span></div>
                                 </div>
                             </div>
-                            <div class="p-6 bg-gray-800">
-                                <button type="button" onclick="requestEsim()" id="desktop_submit_btn" disabled class="w-full bg-blue-600 disabled:bg-gray-700 disabled:text-gray-500 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all">Request eSIM</button>
-                            </div>
+                            <button type="button" onclick="requestEsim()" id="desktop_submit_btn" disabled class="w-full mt-8 bg-white disabled:bg-zinc-800 disabled:text-zinc-600 text-black font-black py-5 rounded-2xl transition-all active:scale-95 shadow-[0_0_40px_rgba(255,255,255,0.2)] disabled:shadow-none">
+                                Request eSIM
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- MY eSIMs TAB (USER) -->
-            <div id="my-esims-tab" class="tab-content hidden max-w-5xl mx-auto">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900">My eSIMs</h2>
-                    <button onclick="loadUserRequests()" class="bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-bold active:scale-95"><i class="fa-solid fa-rotate-right"></i></button>
+            <!-- MY eSIMs TAB -->
+            <div id="my-esims-tab" class="tab-content hidden max-w-md mx-auto md:max-w-5xl">
+                <div class="flex justify-between items-end mb-6 md:mb-10">
+                    <div>
+                        <h2 class="text-3xl md:text-4xl font-black tracking-tight text-zinc-900">Wallet</h2>
+                        <p class="text-zinc-500 font-medium mt-1">Your active and past eSIMs.</p>
+                    </div>
+                    <button onclick="loadUserRequests()" class="w-10 h-10 bg-white rounded-full shadow flex items-center justify-center text-zinc-800 active:scale-90 transition"><i class="fa-solid fa-rotate-right"></i></button>
                 </div>
-                <!-- Grid Cards Container -->
-                <div id="user-requests-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                
+                <div id="user-requests-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <!-- Cards injected by JS -->
                 </div>
             </div>
 
             <!-- BILLING TAB (USER) -->
-            <div id="billing-tab" class="tab-content hidden max-w-5xl mx-auto">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900">My Billing</h2>
+            <div id="billing-tab" class="tab-content hidden max-w-md mx-auto md:max-w-5xl">
+                <div class="mb-6 md:mb-10">
+                    <h2 class="text-3xl md:text-4xl font-black tracking-tight text-zinc-900">Invoices</h2>
+                    <p class="text-zinc-500 font-medium mt-1">Monthly cost accumulation.</p>
                 </div>
-                <!-- Grid Cards Container -->
-                <div id="user-billing-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div id="user-billing-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <!-- Cards injected by JS -->
                 </div>
             </div>
 
-            <!-- ADMIN: MANAGE TAB -->
+            <!-- ADMIN TABS -->
             <div id="admin-requests-tab" class="tab-content hidden max-w-6xl mx-auto">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl md:text-3xl font-bold text-purple-900"><i class="fa-solid fa-inbox mr-2"></i> Manage</h2>
-                    <button onclick="loadAdminRequests()" class="text-purple-600 bg-purple-100 px-3 py-1.5 rounded-lg text-sm font-bold active:scale-95"><i class="fa-solid fa-rotate-right"></i></button>
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <h2 class="text-3xl md:text-4xl font-black tracking-tight text-zinc-900">Inbox</h2>
+                        <p class="text-zinc-500 font-medium mt-1">New requests from users.</p>
+                    </div>
+                    <button onclick="loadAdminRequests()" class="w-10 h-10 bg-black text-white rounded-full shadow-lg flex items-center justify-center active:scale-90 transition"><i class="fa-solid fa-rotate-right"></i></button>
                 </div>
-                
-                <!-- Grid Cards Container -->
-                <div id="admin-requests-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    <!-- Cards injected by JS -->
-                </div>
+                <div id="admin-requests-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
             </div>
             
-            <!-- ADMIN: HISTORY TAB -->
             <div id="admin-history-tab" class="tab-content hidden max-w-6xl mx-auto">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900"><i class="fa-solid fa-clock-rotate-left mr-2"></i> History</h2>
-                    <button onclick="loadAdminHistory()" class="text-gray-600 bg-gray-200 px-3 py-1.5 rounded-lg text-sm font-bold active:scale-95"><i class="fa-solid fa-rotate-right"></i></button>
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <h2 class="text-3xl md:text-4xl font-black tracking-tight text-zinc-900">Database</h2>
+                        <p class="text-zinc-500 font-medium mt-1">All processed records.</p>
+                    </div>
+                    <button onclick="loadAdminHistory()" class="w-10 h-10 bg-white text-black rounded-full shadow flex items-center justify-center active:scale-90 transition"><i class="fa-solid fa-rotate-right"></i></button>
                 </div>
-                <!-- Grid Cards Container -->
-                <div id="admin-history-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <!-- Cards injected by JS -->
-                </div>
+                <div id="admin-history-list" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"></div>
             </div>
 
-            <!-- ADMIN: BILLING TAB -->
             <div id="admin-billing-tab" class="tab-content hidden max-w-6xl mx-auto">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl md:text-3xl font-bold text-purple-900"><i class="fa-solid fa-file-invoice mr-2"></i> User Bills</h2>
-                    <button onclick="loadAdminBilling()" class="text-purple-600 bg-purple-100 px-3 py-1.5 rounded-lg text-sm font-bold active:scale-95"><i class="fa-solid fa-rotate-right"></i></button>
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <h2 class="text-3xl md:text-4xl font-black tracking-tight text-zinc-900">Revenue</h2>
+                        <p class="text-zinc-500 font-medium mt-1">Monthly tracking per user.</p>
+                    </div>
+                    <button onclick="loadAdminBilling()" class="w-10 h-10 bg-white text-black rounded-full shadow flex items-center justify-center active:scale-90 transition"><i class="fa-solid fa-rotate-right"></i></button>
                 </div>
-                <!-- Grid Cards Container -->
-                <div id="admin-billing-records-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <!-- Cards injected by JS -->
-                </div>
+                <div id="admin-billing-records-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
             </div>
 
         </main>
 
-        <!-- MOBILE STICKY SUMMARY (Visible only on Mobile & Request Tab) -->
-        <div id="mobile-summary" class="lg:hidden fixed bottom-[65px] left-0 w-full bg-white border-t border-gray-200 p-3 flex justify-between items-center shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.1)] z-40 hidden">
-            <div class="flex-1 overflow-hidden pr-2">
-                <div id="mob_sum_country" class="font-bold text-gray-800 text-sm truncate" data-val="">Select region</div>
-                <div id="mob_sum_data" class="text-gray-500 text-xs font-semibold truncate" data-val="">-</div>
-            </div>
-            <button type="button" onclick="requestEsim()" id="mob_submit_btn" disabled class="bg-blue-600 disabled:bg-gray-300 disabled:text-gray-500 text-white font-bold px-6 py-3 rounded-xl transition-all text-sm shadow-md active:scale-95 whitespace-nowrap">
-                Request
-            </button>
-        </div>
-
-        <!-- MOBILE BOTTOM NAVIGATION -->
-        <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around items-center z-50 pb-safe shadow-[0_-2px_10px_-1px_rgba(0,0,0,0.05)]">
+        <!-- FLOATING MOBILE BOTTOM NAV (Glassmorphism) -->
+        <nav id="mobile-bottom-nav" class="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm glass-dark rounded-[2rem] flex justify-around items-center z-50 p-2 shadow-[0_20px_40px_rgba(0,0,0,0.2)] border border-white/10">
             <!-- User Nav -->
-            <div id="mob-user-nav" class="w-full flex justify-around hidden">
-                <button onclick="switchTab('request-tab')" class="mob-nav-btn flex-1 flex flex-col items-center py-2 text-gray-400"><i class="fa-solid fa-earth-americas text-xl mb-1"></i><span class="text-[10px] font-bold">New</span></button>
-                <button onclick="switchTab('my-esims-tab')" class="mob-nav-btn flex-1 flex flex-col items-center py-2 text-gray-400"><i class="fa-solid fa-sim-card text-xl mb-1"></i><span class="text-[10px] font-bold">eSIMs</span></button>
-                <button onclick="switchTab('billing-tab')" class="mob-nav-btn flex-1 flex flex-col items-center py-2 text-gray-400"><i class="fa-solid fa-file-invoice-dollar text-xl mb-1"></i><span class="text-[10px] font-bold">Billing</span></button>
+            <div id="mob-user-nav" class="w-full flex justify-between hidden">
+                <button onclick="switchTab('request-tab')" class="mob-nav-btn relative w-1/3 py-3 text-zinc-400 flex flex-col items-center rounded-2xl transition-all"><i class="fa-solid fa-plus text-xl mb-1"></i><span class="text-[9px] font-bold uppercase tracking-widest">New</span></button>
+                <button onclick="switchTab('my-esims-tab')" class="mob-nav-btn relative w-1/3 py-3 text-zinc-400 flex flex-col items-center rounded-2xl transition-all"><i class="fa-solid fa-wallet text-xl mb-1"></i><span class="text-[9px] font-bold uppercase tracking-widest">Wallet</span></button>
+                <button onclick="switchTab('billing-tab')" class="mob-nav-btn relative w-1/3 py-3 text-zinc-400 flex flex-col items-center rounded-2xl transition-all"><i class="fa-solid fa-receipt text-xl mb-1"></i><span class="text-[9px] font-bold uppercase tracking-widest">Bills</span></button>
             </div>
             <!-- Admin Nav -->
-            <div id="mob-admin-nav" class="w-full flex justify-around hidden bg-purple-50">
-                <button onclick="switchTab('admin-requests-tab')" class="mob-nav-btn flex-1 flex flex-col items-center py-2 text-gray-400"><i class="fa-solid fa-inbox text-xl mb-1"></i><span class="text-[10px] font-bold">Manage</span></button>
-                <button onclick="switchTab('admin-history-tab')" class="mob-nav-btn flex-1 flex flex-col items-center py-2 text-gray-400"><i class="fa-solid fa-clock-rotate-left text-xl mb-1"></i><span class="text-[10px] font-bold">History</span></button>
-                <button onclick="switchTab('admin-billing-tab')" class="mob-nav-btn flex-1 flex flex-col items-center py-2 text-gray-400"><i class="fa-solid fa-file-invoice text-xl mb-1"></i><span class="text-[10px] font-bold">Bills</span></button>
+            <div id="mob-admin-nav" class="w-full flex justify-between hidden">
+                <button onclick="switchTab('admin-requests-tab')" class="mob-nav-btn relative w-1/3 py-3 text-zinc-400 flex flex-col items-center rounded-2xl transition-all"><i class="fa-solid fa-inbox text-xl mb-1"></i><span class="text-[9px] font-bold uppercase tracking-widest">Inbox</span></button>
+                <button onclick="switchTab('admin-history-tab')" class="mob-nav-btn relative w-1/3 py-3 text-zinc-400 flex flex-col items-center rounded-2xl transition-all"><i class="fa-solid fa-database text-xl mb-1"></i><span class="text-[9px] font-bold uppercase tracking-widest">Data</span></button>
+                <button onclick="switchTab('admin-billing-tab')" class="mob-nav-btn relative w-1/3 py-3 text-zinc-400 flex flex-col items-center rounded-2xl transition-all"><i class="fa-solid fa-chart-line text-xl mb-1"></i><span class="text-[9px] font-bold uppercase tracking-widest">Rev</span></button>
             </div>
         </nav>
+
+        <!-- FLOATING MOBILE ACTION BUTTON (Request form) -->
+        <div id="mobile-summary" class="lg:hidden fixed bottom-[90px] left-1/2 -translate-x-1/2 w-[90%] max-w-sm z-40 hidden animate-slide-up">
+            <button type="button" onclick="requestEsim()" id="mob_submit_btn" disabled class="w-full bg-black disabled:bg-zinc-300 disabled:text-zinc-500 text-white font-black py-4 rounded-[1.5rem] shadow-2xl transition-all flex justify-between items-center px-6 active:scale-95">
+                <div class="text-left">
+                    <span id="mob_sum_country" class="block text-xs text-zinc-400 uppercase tracking-widest mb-0.5">Select Region</span>
+                    <span id="mob_sum_data" class="block text-lg">-</span>
+                </div>
+                <i class="fa-solid fa-arrow-right text-xl"></i>
+            </button>
+        </div>
 
     </div>
 
