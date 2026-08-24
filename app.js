@@ -124,83 +124,8 @@ async function checkProfileAndLoadUI() {
     }
 }
 
-function setDataType(type) {
-    currentDataType = type;
-    const slider = document.getElementById('gb_slider');
-    const btnTotal = document.getElementById('btn_type_total');
-    const btnDaily = document.getElementById('btn_type_daily');
-    const daysContainer = document.getElementById('days_container');
-    
-    if(type === 'total') {
-        btnTotal.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white shadow text-black transition-all";
-        btnDaily.className = "flex-1 py-2 text-xs font-bold rounded-lg text-zinc-500 transition-all bg-transparent";
-        document.getElementById('slider-type-display').innerText = "total";
-        slider.max = "50"; slider.classList.remove('slider-orange'); slider.classList.add('slider-black');
-        daysContainer.classList.add('hidden'); 
-    } else {
-        btnDaily.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white shadow text-black transition-all";
-        btnTotal.className = "flex-1 py-2 text-xs font-bold rounded-lg text-zinc-500 transition-all bg-transparent";
-        document.getElementById('slider-type-display').innerText = "/ day";
-        slider.max = "10"; slider.classList.add('slider-orange'); slider.classList.remove('slider-black');
-        daysContainer.classList.remove('hidden'); 
-        if(parseInt(slider.value) > 10) slider.value = 5; 
-    }
-    updateSummary();
-}
-
 function triggerAnimation(element) {
     element.classList.remove('animate-pop'); void element.offsetWidth; element.classList.add('animate-pop');
-}
-
-function updateSummary() {
-    let selectedCountry = "";
-    const radioSelected = document.querySelector('input[name="country_selection"]:checked');
-    const customDiv = document.getElementById('custom-country-div');
-    
-    if(radioSelected) {
-        if(radioSelected.value === 'custom') {
-            customDiv.classList.remove('hidden');
-            selectedCountry = document.getElementById('custom_country_input').value.trim();
-        } else {
-            customDiv.classList.add('hidden');
-            selectedCountry = radioSelected.value;
-        }
-    } else customDiv.classList.add('hidden');
-
-    const dCountry = document.getElementById('desktop_sum_country');
-    if(selectedCountry) dCountry.innerHTML = `<span class="text-white">${selectedCountry}</span>`;
-    else dCountry.innerHTML = `<span class="text-zinc-600">Select region...</span>`;
-    
-    const mCountry = document.getElementById('mob_sum_country');
-    if(selectedCountry) { mCountry.innerText = selectedCountry; mCountry.classList.replace('text-zinc-400', 'text-zinc-300'); }
-    else { mCountry.innerText = "Select Region"; mCountry.classList.replace('text-zinc-300', 'text-zinc-400'); }
-
-    const gbValue = document.getElementById('gb_slider').value;
-    document.getElementById('slider-val-display').innerText = gbValue;
-
-    let dataStringDesktop = "", dataStringMobile = "";
-    if (currentDataType === 'total') {
-        dataStringDesktop = `${gbValue} GB <span class="text-xs font-bold text-zinc-500 tracking-widest uppercase ml-1">Total</span>`;
-        dataStringMobile = `${gbValue} GB Total`;
-    } else {
-        const daysValue = document.getElementById('days_slider').value;
-        document.getElementById('days-val-display').innerText = daysValue;
-        dataStringDesktop = `${gbValue} GB <span class="text-xs font-bold text-zinc-500 tracking-widest uppercase ml-1">/ day for ${daysValue}d</span>`;
-        dataStringMobile = `${gbValue}GB/d (${daysValue}d)`;
-    }
-    
-    const dData = document.getElementById('desktop_sum_data');
-    if (dData.dataset.val !== dataStringDesktop) {
-        dData.innerHTML = dataStringDesktop;
-        dData.dataset.val = dataStringDesktop;
-        triggerAnimation(dData);
-    }
-    document.getElementById('mob_sum_data').innerText = dataStringMobile;
-
-    const dBtn = document.getElementById('desktop_submit_btn');
-    const mBtn = document.getElementById('mob_submit_btn');
-    if (selectedCountry !== "") { dBtn.removeAttribute('disabled'); mBtn.removeAttribute('disabled'); } 
-    else { dBtn.setAttribute('disabled', 'true'); mBtn.setAttribute('disabled', 'true'); }
 }
 
 async function requestEsim() {
@@ -216,10 +141,13 @@ async function requestEsim() {
         endDateStr = endDateObj.toISOString().split('T')[0];
     }
 
+    const sliderVal = document.getElementById('gb_slider').value;
+    const gbValueText = currentDataType === 'total' ? getGbLabel(sliderVal) : `${sliderVal} GB`;
+
     const payload = {
         user_id: currentUser.id, country: selectedCountry,
         start_date: dummyDateStr, end_date: endDateStr,   
-        data_type: currentDataType, requested_gb: document.getElementById('gb_slider').value,
+        data_type: currentDataType, requested_gb: gbValueText,
         status: 'pending', price: 0
     };
 
@@ -234,7 +162,7 @@ async function requestEsim() {
         document.getElementById('mob_submit_btn').removeAttribute('disabled');
     } else {
         showToast('eSIM Requested!');
-        document.getElementById('gb_slider').value = 5;
+        document.getElementById('gb_slider').value = 2;
         document.getElementById('custom_country_input').value = "";
         if(document.querySelector('input[name="country_selection"]:checked')) document.querySelector('input[name="country_selection"]:checked').checked = false;
         setDataType('total'); updateSummary(); 
@@ -256,8 +184,8 @@ async function requestEsim() {
 function getPlanInfo(req) {
     if (req.data_type === 'daily') {
         const diffDays = Math.round(Math.abs((new Date(req.end_date) - new Date(req.start_date)) / 86400000));
-        return { large: `${req.requested_gb}GB`, small: `/ DAY FOR ${diffDays} DAYS` };
-    } else return { large: `${req.requested_gb}GB`, small: 'TOTAL PLAN' };
+        return { large: `${req.requested_gb}`, small: `/ DAY FOR ${diffDays} DAYS` };
+    } else return { large: `${req.requested_gb}`, small: 'TOTAL PLAN' };
 }
 
 function hashCode(str) { let hash = 0; for (let i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); } return hash; }
@@ -319,10 +247,8 @@ async function loadUserBilling() {
     const monthlyData = {};
     data.forEach(req => {
         const month = req.created_at.substring(0, 7); 
-        if(!monthlyData[month]) monthlyData[month] = { gb: 0, cost: 0, items: 0 };
-        let reqGb = parseFloat(req.requested_gb);
-        if(req.data_type === 'daily') reqGb = reqGb * Math.round(Math.abs((new Date(req.end_date) - new Date(req.start_date)) / 86400000));
-        monthlyData[month].gb += reqGb; monthlyData[month].cost += parseFloat(req.price || 0); monthlyData[month].items += 1;
+        if(!monthlyData[month]) monthlyData[month] = { cost: 0, items: 0 };
+        monthlyData[month].cost += parseFloat(req.price || 0); monthlyData[month].items += 1;
     });
     const container = document.getElementById('user-billing-list');
     container.innerHTML = '';
@@ -338,8 +264,8 @@ async function loadUserBilling() {
                 </div>
                 <div class="flex justify-between items-end">
                     <div>
-                        <p class="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mb-1">Total Data</p>
-                        <p class="font-bold text-zinc-700">${info.gb} GB</p>
+                        <p class="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mb-1">Status</p>
+                        <p class="font-bold text-zinc-700">Settled</p>
                     </div>
                     <div class="text-right">
                         <p class="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mb-1">Total Due</p>
@@ -472,10 +398,8 @@ async function loadAdminBilling() {
         const month = req.created_at.substring(0, 7);
         const email = req.profiles?.email || 'Unknown';
         const key = `${month}_${email}`;
-        if(!adminMonthly[key]) adminMonthly[key] = { email, month, gb: 0, cost: 0, items: 0 };
-        let reqGb = parseFloat(req.requested_gb);
-        if(req.data_type === 'daily') reqGb = reqGb * Math.round(Math.abs((new Date(req.end_date) - new Date(req.start_date)) / 86400000));
-        adminMonthly[key].gb += reqGb; adminMonthly[key].cost += parseFloat(req.price || 0); adminMonthly[key].items += 1;
+        if(!adminMonthly[key]) adminMonthly[key] = { email, month, cost: 0, items: 0 };
+        adminMonthly[key].cost += parseFloat(req.price || 0); adminMonthly[key].items += 1;
     });
     
     const container = document.getElementById('admin-billing-records-list');
@@ -498,8 +422,8 @@ async function loadAdminBilling() {
                 </div>
                 <div class="flex justify-between items-end">
                     <div>
-                        <p class="text-[10px] text-zinc-400 font-bold tracking-widest uppercase mb-1">Total Data</p>
-                        <p class="font-bold text-zinc-600">${info.gb} GB</p>
+                        <p class="text-[10px] text-zinc-400 font-bold tracking-widest uppercase mb-1">Status</p>
+                        <p class="font-bold text-zinc-600">Collected</p>
                     </div>
                     <div class="text-right">
                         <p class="text-[10px] text-zinc-400 font-bold tracking-widest uppercase mb-1">Total Due</p>
