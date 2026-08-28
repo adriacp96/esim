@@ -184,7 +184,6 @@ async function requestEsim() {
 function getPlanInfo(req) {
     if (req.data_type === 'daily') {
         const diffDays = Math.round(Math.abs((new Date(req.end_date) - new Date(req.start_date)) / 86400000));
-        // Asegúrate de que no se duplique "GB" si req.requested_gb ya lo incluye
         const gbText = req.requested_gb.includes('GB') ? req.requested_gb : `${req.requested_gb}GB`;
         return { large: gbText, small: `/ DAY FOR ${diffDays} DAYS` };
     } else {
@@ -207,7 +206,7 @@ async function loadUserRequests() {
 
     data.forEach((req, idx) => {
         const plan = getPlanInfo(req);
-        const bgClass = bgColors[Math.abs(hashCode(req.country)) % bgColors.length];
+        const bgClass = req.is_gift ? 'from-yellow-400 to-yellow-600' : bgColors[Math.abs(hashCode(req.country)) % bgColors.length];
         
         let actionUI = '';
         let statusUI = '';
@@ -226,13 +225,17 @@ async function loadUserRequests() {
             actionUI = `<span class="text-white/80 text-xs font-bold">Waiting</span>`;
         }
 
+        if (req.is_gift) {
+            statusUI = `<span class="bg-yellow-500/90 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white tracking-widest uppercase mr-2 shadow-sm"><i class="fa-solid fa-gift mr-1"></i> Gift</span>` + statusUI;
+        }
+
         container.innerHTML += `
             <div class="relative bg-gradient-to-r ${bgClass} rounded-2xl p-5 text-white shadow-lg overflow-hidden flex items-center justify-between gap-4">
                 <div class="absolute -right-6 -bottom-6 text-white/10 text-7xl pointer-events-none"><i class="fa-solid fa-sim-card"></i></div>
                 <div class="relative z-10 min-w-0 flex-1">
-                    <div class="flex items-center gap-2 mb-1">
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
                         <h3 class="text-lg font-black tracking-tight truncate">${req.country}</h3>
-                        ${statusUI}
+                        <div class="flex">${statusUI}</div>
                     </div>
                     <div class="flex items-baseline gap-1.5">
                         <span class="text-2xl font-black tracking-tighter">${plan.large}</span>
@@ -355,7 +358,7 @@ async function loadAdminHistory() {
                 <div class="w-2 h-12 rounded-full bg-zinc-100 ${req.status === 'approved' ? '!bg-green-400' : req.status === 'rejected' ? '!bg-red-400' : ''}"></div>
                 <div class="flex-1 overflow-hidden">
                     <p class="text-[10px] text-zinc-400 font-bold tracking-widest uppercase truncate">${req.profiles?.email?.split('@')[0] || 'Unknown'}</p>
-                    <h4 class="font-bold text-lg text-zinc-900 truncate tracking-tight leading-tight">${req.country}</h4>
+                    <h4 class="font-bold text-lg text-zinc-900 truncate tracking-tight leading-tight">${req.country} ${req.is_gift ? '🎁' : ''}</h4>
                     <p class="text-xs text-zinc-500 font-medium">${plan.large} ${plan.small.toLowerCase()}</p>
                 </div>
                 <div class="text-right">
@@ -458,4 +461,57 @@ async function deleteRequest(reqId) {
     if(!confirm("Delete forever?")) return;
     await supabaseClient.from('esim_requests').delete().eq('id', reqId);
     loadAdminHistory();
+}
+
+async function openGiftModal() {
+    document.getElementById('gift-modal').classList.remove('hidden');
+    const { data, error } = await supabaseClient.from('profiles').select('id, email').order('email');
+    if (data) {
+        const select = document.getElementById('gift_user_select');
+        select.innerHTML = '<option value="">Select a user...</option>' + data.map(u => `<option value="${u.id}">${u.email}</option>`).join('');
+    }
+}
+
+function closeGiftModal() {
+    document.getElementById('gift-modal').classList.add('hidden');
+}
+
+async function submitGift() {
+    const userId = document.getElementById('gift_user_select').value;
+    const country = document.getElementById('gift_country').value;
+    const plan = document.getElementById('gift_plan').value;
+    const link = document.getElementById('gift_link').value;
+
+    if (!userId || !country || !plan || !link) {
+        return showToast("Fill all fields to send a gift", "error");
+    }
+
+    const dummyDateStr = new Date().toISOString().split('T')[0];
+
+    const payload = {
+        user_id: userId,
+        country: country,
+        start_date: dummyDateStr,
+        end_date: dummyDateStr,
+        data_type: 'total',
+        requested_gb: plan,
+        status: 'approved',
+        price: 0,
+        installation_link: link,
+        is_gift: true
+    };
+
+    const { error } = await supabaseClient.from('esim_requests').insert([payload]);
+
+    if (error) {
+        showToast(error.message, 'error');
+    } else {
+        showToast('Gift successfully sent!');
+        closeGiftModal();
+        document.getElementById('gift_user_select').value = '';
+        document.getElementById('gift_country').value = '';
+        document.getElementById('gift_plan').value = '';
+        document.getElementById('gift_link').value = '';
+        loadAdminHistory();
+    }
 }
