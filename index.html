@@ -550,38 +550,122 @@
             </div>
 
             <!-- Gift Modal -->
-            <div id="gift-modal" class="fixed inset-0 bg-black/50 z-[9999] hidden flex items-center justify-center p-4">
-                <div class="bg-white rounded-[2rem] p-6 md:p-8 w-full max-w-md animate-slide-up shadow-2xl">
-                    <div class="flex items-center gap-3 mb-6">
-                        <div class="w-10 h-10 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center">
-                            <i class="fa-solid fa-gift"></i>
+<div id="gift-modal" class="fixed inset-0 bg-black/50 z-[9999] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-[2rem] p-6 md:p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto animate-slide-up shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-gift"></i>
+                </div>
+                <h3 class="font-black text-2xl tracking-tight text-zinc-900">Gift an eSIM</h3>
+            </div>
+            <button onclick="closeGiftModal()" class="w-8 h-8 rounded-full bg-zinc-100 text-zinc-500 hover:bg-zinc-200 flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="space-y-5">
+            <!-- Select Recipient -->
+            <div>
+                <label class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block mb-1">Recipient User</label>
+                <select id="gift_user_select" class="w-full bg-zinc-100 p-3.5 rounded-xl outline-none font-medium text-sm focus:ring-2 focus:ring-black transition"></select>
+            </div>
+
+            <!-- Destination Selection -->
+            <div>
+                <label class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block mb-1.5">Destination</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <label class="dest-card cursor-pointer">
+                        <input type="radio" name="gift_country_selection" value="Europe" class="sr-only" onclick="updateGiftSummary()">
+                        <div class="bg-zinc-100 border-2 border-transparent rounded-xl p-2.5 flex flex-col items-center justify-center h-16 relative">
+                            <i class="fa-solid fa-earth-europe text-lg text-zinc-400 mb-0.5 icon-color"></i>
+                            <span class="font-bold text-zinc-600 text-[10px] text-color">Europe</span>
                         </div>
-                        <h3 class="font-black text-2xl tracking-tight text-zinc-900">Gift an eSIM</h3>
-                    </div>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block mb-1">Select User</label>
-                            <select id="gift_user_select" class="w-full bg-zinc-100 p-4 rounded-xl outline-none font-medium text-sm focus:ring-2 focus:ring-black transition"></select>
+                    </label>
+                    <label class="dest-card cursor-pointer">
+                        <input type="radio" name="gift_country_selection" value="USA" class="sr-only" onclick="updateGiftSummary()">
+                        <div class="bg-zinc-100 border-2 border-transparent rounded-xl p-2.5 flex flex-col items-center justify-center h-16 relative">
+                            <i class="fa-solid fa-flag-usa text-lg text-zinc-400 mb-0.5 icon-color"></i>
+                            <span class="font-bold text-zinc-600 text-[10px] text-color">USA</span>
                         </div>
-                        <div>
-                            <label class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block mb-1">Destination</label>
-                            <input type="text" id="gift_country" class="w-full bg-zinc-100 p-4 rounded-xl outline-none font-medium text-sm focus:ring-2 focus:ring-black transition" placeholder="e.g. Europe">
+                    </label>
+                    <label class="dest-card cursor-pointer">
+                        <input type="radio" name="gift_country_selection" value="Japan" class="sr-only" onclick="updateGiftSummary()">
+                        <div class="bg-zinc-100 border-2 border-transparent rounded-xl p-2.5 flex flex-col items-center justify-center h-16 relative">
+                            <i class="fa-solid fa-torii-gate text-lg text-zinc-400 mb-0.5 icon-color"></i>
+                            <span class="font-bold text-zinc-600 text-[10px] text-color">Japan</span>
                         </div>
-                        <div>
-                            <label class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block mb-1">Data Plan</label>
-                            <input type="text" id="gift_plan" class="w-full bg-zinc-100 p-4 rounded-xl outline-none font-medium text-sm focus:ring-2 focus:ring-black transition" placeholder="e.g. 10 GB">
+                    </label>
+                    <label class="dest-card cursor-pointer">
+                        <input type="radio" name="gift_country_selection" value="Asia" class="sr-only" onclick="updateGiftSummary()">
+                        <div class="bg-zinc-100 border-2 border-transparent rounded-xl p-2.5 flex flex-col items-center justify-center h-16 relative">
+                            <i class="fa-solid fa-earth-asia text-lg text-zinc-400 mb-0.5 icon-color"></i>
+                            <span class="font-bold text-zinc-600 text-[10px] text-color">Asia</span>
                         </div>
-                        <div>
-                            <label class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block mb-1">QR Installation Link</label>
-                            <input type="url" id="gift_link" class="w-full bg-zinc-100 p-4 rounded-xl outline-none font-medium text-sm focus:ring-2 focus:ring-black transition" placeholder="https://...">
+                    </label>
+                    <label class="dest-card cursor-pointer">
+                        <input type="radio" name="gift_country_selection" value="Global" class="sr-only" onclick="updateGiftSummary()">
+                        <div class="bg-zinc-100 border-2 border-transparent rounded-xl p-2.5 flex flex-col items-center justify-center h-16 relative">
+                            <i class="fa-solid fa-globe text-lg text-zinc-400 mb-0.5 icon-color"></i>
+                            <span class="font-bold text-zinc-600 text-[10px] text-color">Global</span>
                         </div>
-                    </div>
-                    <div class="flex gap-3 mt-8">
-                        <button onclick="closeGiftModal()" class="flex-1 bg-zinc-100 text-zinc-600 hover:bg-zinc-200 transition font-bold py-4 rounded-xl">Cancel</button>
-                        <button onclick="submitGift()" class="flex-[2] bg-yellow-500 hover:bg-yellow-600 transition text-white font-black py-4 rounded-xl shadow-lg shadow-yellow-500/20 active:scale-95">Send Gift</button>
-                    </div>
+                    </label>
+                    <label class="dest-card cursor-pointer">
+                        <input type="radio" name="gift_country_selection" value="custom" class="sr-only" onclick="updateGiftSummary()">
+                        <div class="bg-zinc-200/60 border-2 border-transparent rounded-xl p-2.5 flex flex-col items-center justify-center h-16 relative">
+                            <i class="fa-solid fa-magnifying-glass text-base text-zinc-400 mb-0.5 icon-color"></i>
+                            <span class="font-bold text-zinc-500 text-[10px] text-color">Search</span>
+                        </div>
+                    </label>
+                </div>
+                <div id="gift-custom-country-div" class="hidden mt-2">
+                    <input type="text" id="gift_custom_country_input" class="w-full bg-zinc-100 rounded-xl p-3 text-xs font-bold outline-none focus:ring-2 focus:ring-black" placeholder="Where exactly? (e.g. Brazil)" oninput="updateGiftSummary()">
                 </div>
             </div>
+
+            <!-- Data Plan Options -->
+            <div class="bg-zinc-50 p-4 rounded-2xl border border-zinc-200/80 space-y-4">
+                <div class="flex bg-zinc-200/60 p-1 rounded-xl">
+                    <button type="button" id="gift_btn_type_total" onclick="setGiftDataType('total')" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-white shadow text-black transition-all">
+                        Total Data
+                    </button>
+                    <button type="button" id="gift_btn_type_daily" onclick="setGiftDataType('daily')" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-zinc-500 transition-all">
+                        Daily Plan
+                    </button>
+                </div>
+
+                <!-- GB Slider -->
+                <div>
+                    <div class="flex items-baseline justify-between mb-1">
+                        <div class="text-2xl font-black text-zinc-900" id="gift-slider-val-display">1 GB</div>
+                        <span id="gift-slider-type-display" class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">total plan</span>
+                    </div>
+                    <input type="range" id="gift_gb_slider" min="1" max="12" step="1" value="2" class="slider-black" oninput="onGiftSliderChange()">
+                </div>
+
+                <!-- Days Slider (hidden by default) -->
+                <div id="gift_days_container" class="hidden pt-3 border-t border-zinc-200/60">
+                    <div class="flex items-baseline justify-between mb-1">
+                        <div class="text-2xl font-black text-orange-500" id="gift-days-val-display">7</div>
+                        <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Days</span>
+                    </div>
+                    <input type="range" id="gift_days_slider" min="1" max="30" value="7" class="slider-orange" oninput="updateGiftSummary()">
+                </div>
+            </div>
+
+            <!-- QR Link Input -->
+            <div>
+                <label class="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block mb-1">QR Installation Link</label>
+                <input type="url" id="gift_link" class="w-full bg-zinc-100 p-3.5 rounded-xl outline-none font-medium text-sm focus:ring-2 focus:ring-black transition" placeholder="https://...">
+            </div>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+            <button onclick="closeGiftModal()" class="flex-1 bg-zinc-100 text-zinc-600 hover:bg-zinc-200 transition font-bold py-3.5 rounded-xl text-sm">Cancel</button>
+            <button onclick="submitGift()" class="flex-[2] bg-yellow-500 hover:bg-yellow-600 transition text-white font-black py-3.5 rounded-xl shadow-lg shadow-yellow-500/20 active:scale-95 text-sm">Send Gift</button>
+        </div>
+    </div>
+</div>
         </main>
         <nav
             id="mobile-bottom-nav"
