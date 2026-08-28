@@ -2,6 +2,8 @@ const SUPABASE_URL = 'https://dvutnthqhkmqzgkihdtd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR2dXRudGhxaGttcXpna2loZHRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1MzcxOTAsImV4cCI6MjEwMzExMzE5MH0.nfcTnpmzJ8Jz9bO10Xox9T6D1UOF7fwfG-3IOtn9ceI';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+const VAPID_PUBLIC_KEY = 'BDA1prRtf8JW_0WWdX1qGUErVDaoYwYzVIBHtf0YaXJFZQxVgMDSdvlr4Ps32xELWVPxt89UpPjhkpNKn9f0IdE';
+
 let currentUser = null;
 let userProfile = null;
 let currentDataType = 'total'; 
@@ -20,13 +22,46 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-async function requestNotificationPermission() {
-    if ('Notification' in window && Notification.permission === 'default') {
-        try {
-            await Notification.requestPermission();
-        } catch (e) {
-            console.error('Error requesting notification permission:', e);
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
+
+async function registerPushServiceWorker() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+    try {
+        const registration = await navigator.serviceWorker.register('/sw.js');
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') return;
+
+        let subscription = await registration.pushManager.getSubscription();
+
+        if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+            });
         }
+
+        const subJson = subscription.toJSON();
+
+        if (currentUser && subJson.endpoint) {
+            await supabaseClient.from('push_subscriptions').upsert({
+                user_id: currentUser.id,
+                endpoint: subJson.endpoint,
+                p256dh: subJson.keys.p256dh,
+                auth: subJson.keys.auth
+            }, { onConflict: 'endpoint' });
+        }
+    } catch (err) {
+        console.error('Push Service Worker error:', err);
     }
 }
 
@@ -71,13 +106,6 @@ function notifyAdminNewRequest(req) {
     
     showToast(`${title}: ${body}`, 'info');
     
-    if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(title, {
-            body: body,
-            icon: 'esimicon.png'
-        });
-    }
-
     const adminReqTab = document.getElementById('admin-requests-tab');
     if (adminReqTab && !adminReqTab.classList.contains('hidden')) {
         loadAdminRequests();
@@ -90,19 +118,6 @@ function notifyUserEsimReady(req) {
 
     showToast(title, 'success');
 
-    if ('Notification' in window && Notification.permission === 'granted') {
-        const notif = new Notification(title, {
-            body: body,
-            icon: 'esimicon.png'
-        });
-        notif.onclick = () => {
-            window.focus();
-            if (req.installation_link) {
-                window.open(req.installation_link, '_blank');
-            }
-        };
-    }
-
     const userReqTab = document.getElementById('my-esims-tab');
     if (userReqTab && !userReqTab.classList.contains('hidden')) {
         loadUserRequests();
@@ -114,7 +129,8 @@ function activarSesionUI(session) {
     document.getElementById('user-display-email').innerText = currentUser.email;
     document.getElementById('auth-view').classList.add('hidden');
     document.getElementById('app-layout').classList.remove('hidden');
-    requestNotificationPermission();
+    
+    registerPushServiceWorker();
     checkProfileAndLoadUI();
 }
 
