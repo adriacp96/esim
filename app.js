@@ -5,6 +5,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null;
 let userProfile = null;
 let currentDataType = 'total'; 
+let notificationChannel = null;
 
 const bgColors = [
     'from-blue-600 to-indigo-900', 'from-rose-500 to-red-800', 
@@ -19,16 +20,111 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+async function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+        try {
+            await Notification.requestPermission();
+        } catch (e) {
+            console.error('Error requesting notification permission:', e);
+        }
+    }
+}
+
+function setupRealtimeNotifications() {
+    if (notificationChannel) {
+        supabaseClient.removeChannel(notificationChannel);
+    }
+
+    notificationChannel = supabaseClient
+        .channel('realtime_esim_requests')
+        .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'esim_requests' },
+            (payload) => {
+                if (userProfile && userProfile.role === 'admin') {
+                    notifyAdminNewRequest(payload.new);
+                }
+            }
+        )
+        .on(
+            'postgres_changes',
+            { event: 'UPDATE', schema: 'public', table: 'esim_requests' },
+            (payload) => {
+                const req = payload.new;
+                if (
+                    currentUser &&
+                    req.user_id === currentUser.id &&
+                    req.status === 'approved' &&
+                    req.installation_link &&
+                    payload.old.status !== 'approved'
+                ) {
+                    notifyUserEsimReady(req);
+                }
+            }
+        )
+        .subscribe();
+}
+
+function notifyAdminNewRequest(req) {
+    const title = 'New eSIM Request';
+    const body = `Order received for ${req.country} (${req.requested_gb}).`;
+    
+    showToast(`${title}: ${body}`, 'info');
+    
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, {
+            body: body,
+            icon: 'esimicon.png'
+        });
+    }
+
+    const adminReqTab = document.getElementById('admin-requests-tab');
+    if (adminReqTab && !adminReqTab.classList.contains('hidden')) {
+        loadAdminRequests();
+    }
+}
+
+function notifyUserEsimReady(req) {
+    const title = 'eSIM Ready to Install! 🚀';
+    const body = `Your eSIM for ${req.country} is ready. Tap to install.`;
+
+    showToast(title, 'success');
+
+    if ('Notification' in window && Notification.permission === 'granted') {
+        const notif = new Notification(title, {
+            body: body,
+            icon: 'esimicon.png'
+        });
+        notif.onclick = () => {
+            window.focus();
+            if (req.installation_link) {
+                window.open(req.installation_link, '_blank');
+            }
+        };
+    }
+
+    const userReqTab = document.getElementById('my-esims-tab');
+    if (userReqTab && !userReqTab.classList.contains('hidden')) {
+        loadUserRequests();
+    }
+}
+
 function activarSesionUI(session) {
     currentUser = session.user;
     document.getElementById('user-display-email').innerText = currentUser.email;
     document.getElementById('auth-view').classList.add('hidden');
     document.getElementById('app-layout').classList.remove('hidden');
+    requestNotificationPermission();
     checkProfileAndLoadUI();
 }
 
 function desactivarSesionUI() {
-    currentUser = null; userProfile = null;
+    if (notificationChannel) {
+        supabaseClient.removeChannel(notificationChannel);
+        notificationChannel = null;
+    }
+    currentUser = null; 
+    userProfile = null;
     document.getElementById('auth-view').classList.remove('hidden');
     document.getElementById('app-layout').classList.add('hidden');
 }
@@ -37,11 +133,24 @@ function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
     const isErr = type === 'error';
-    toast.className = `glass ${isErr ? 'text-red-600 border-red-200' : 'text-zinc-900 border-white'} border px-5 py-4 rounded-2xl shadow-2xl transform transition-all translate-x-full font-bold flex items-center text-sm md:text-base`;
-    toast.innerHTML = `<i class="fa-solid ${isErr ? 'fa-circle-exclamation' : 'fa-check-circle text-green-500'} mr-3 text-xl"></i> <span>${message}</span>`;
+    const isInfo = type === 'info';
+    
+    let iconClass = 'fa-check-circle text-green-500';
+    let borderClass = 'border-white text-zinc-900';
+    
+    if (isErr) {
+        iconClass = 'fa-circle-exclamation text-red-500';
+        borderClass = 'border-red-200 text-red-600';
+    } else if (isInfo) {
+        iconClass = 'fa-bell text-blue-500';
+        borderClass = 'border-blue-200 text-zinc-900';
+    }
+
+    toast.className = `glass ${borderClass} border px-5 py-4 rounded-2xl shadow-2xl transform transition-all translate-x-full font-bold flex items-center text-sm md:text-base`;
+    toast.innerHTML = `<i class="fa-solid ${iconClass} mr-3 text-xl"></i> <span>${message}</span>`;
     container.appendChild(toast);
     setTimeout(() => toast.classList.remove('translate-x-full'), 10);
-    setTimeout(() => { toast.classList.add('translate-x-full'); setTimeout(() => toast.remove(), 300); }, 3000);
+    setTimeout(() => { toast.classList.add('translate-x-full'); setTimeout(() => toast.remove(), 300); }, 3500);
 }
 
 function switchTab(tabId) {
@@ -54,8 +163,8 @@ function switchTab(tabId) {
         btn.classList.add('text-zinc-400');
     });
 
-    if(event && event.currentTarget) {
-        const btn = event.currentTarget;
+    if(window.event && window.event.currentTarget) {
+        const btn = window.event.currentTarget;
         if(btn.classList.contains('mob-nav-btn')) {
             btn.classList.replace('text-zinc-400', 'text-white');
             btn.classList.add('bg-white/10');
@@ -95,6 +204,8 @@ async function logout() { await supabaseClient.auth.signOut(); }
 async function checkProfileAndLoadUI() {
     const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
     userProfile = profile || { role: 'user' }; 
+
+    setupRealtimeNotifications();
 
     if (userProfile.role === 'admin') {
         document.getElementById('desktop-admin-nav').classList.remove('hidden');
@@ -204,7 +315,7 @@ async function loadUserRequests() {
         container.innerHTML = `<div class="col-span-full p-10 text-center text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-100 shadow-sm">No eSIMs in your wallet.</div>`; return;
     }
 
-    data.forEach((req, idx) => {
+    data.forEach((req) => {
         const plan = getPlanInfo(req);
         const bgClass = req.is_gift ? 'from-yellow-400 to-yellow-600' : bgColors[Math.abs(hashCode(req.country)) % bgColors.length];
         
@@ -434,7 +545,7 @@ async function loadAdminBilling() {
                         <p class="font-bold text-zinc-600">Collected</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-[10px] text-zinc-400 font-bold tracking-widest uppercase mb-1">Total Due</p>
+                        <p class="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mb-1">Total Due</p>
                         <p class="font-black text-3xl text-black tracking-tighter leading-none">${info.cost.toFixed(2)} <span class="text-sm font-bold text-zinc-500">AED</span></p>
                     </div>
                 </div>
