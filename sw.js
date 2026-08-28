@@ -1,5 +1,5 @@
 self.addEventListener('push', (event) => {
-    let data = { title: 'eSIM Update', body: 'You have a new update.' };
+    let data = { title: 'eSIM Update', body: 'You have a new update.', url: '/' };
     
     if (event.data) {
         try {
@@ -26,18 +26,19 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
+    const targetUrl = event.notification.data.url || '/';
+
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-            if (clientList.length > 0) {
-                let client = clientList[0];
-                for (let i = 0; i < clientList.length; i++) {
-                    if (clientList[i].focused) {
-                        client = clientList[i];
-                    }
+            for (let i = 0; i < clientList.length; i++) {
+                const client = clientList[i];
+                if (client.url.includes(self.location.origin) && 'focus' in client) {
+                    return client.focus();
                 }
-                return client.focus();
             }
-            return clients.openWindow(event.notification.data.url || '/');
+            if (clients.openWindow) {
+                return clients.openWindow(targetUrl);
+            }
         })
     );
 });
