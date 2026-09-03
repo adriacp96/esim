@@ -321,30 +321,78 @@ function getPlanInfo(req) {
 
 function hashCode(str) { let hash = 0; for (let i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); } return hash; }
 
+async function toggleEsimUsed(reqId, currentUsedState) {
+    const nextState = !currentUsedState;
+    
+    const { error } = await supabaseClient
+        .from('esim_requests')
+        .update({ is_used: nextState })
+        .eq('id', reqId)
+        .eq('user_id', currentUser.id);
+
+    if (error) {
+        showToast(error.message, 'error');
+    } else {
+        showToast(nextState ? 'eSIM marcada como usada' : 'eSIM marcada como no usada', 'success');
+        loadUserRequests();
+    }
+}
+
 async function loadUserRequests() {
-    const { data, error } = await supabaseClient.from('esim_requests').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+    const { data, error } = await supabaseClient
+        .from('esim_requests')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
+
     if (error) return;
     const container = document.getElementById('user-requests-list');
     container.innerHTML = '';
 
     if (data.length === 0) {
-        container.innerHTML = `<div class="col-span-full p-10 text-center text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-100 shadow-sm">No eSIMs in your wallet.</div>`; return;
+        container.innerHTML = `<div class="col-span-full p-10 text-center text-zinc-400 font-bold bg-white rounded-[2rem] border border-zinc-100 shadow-sm">No eSIMs in your wallet.</div>`;
+        return;
     }
 
     data.forEach((req) => {
         const plan = getPlanInfo(req);
         const bgClass = req.is_gift ? 'from-yellow-400 to-yellow-600' : bgColors[Math.abs(hashCode(req.country)) % bgColors.length];
-        
+        const isApproved = req.status === 'approved' && req.installation_link;
+        const isUsed = Boolean(req.is_used);
+
         let actionUI = '';
         let statusUI = '';
 
-        if(req.status === 'approved' && req.installation_link) {
-            statusUI = `<span class="bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white tracking-widest uppercase">Active</span>`;
-            actionUI = `<a href="${req.installation_link}" target="_blank" class="bg-white text-black text-center px-4 py-2 rounded-xl font-black text-xs active:scale-95 transition inline-flex items-center shadow-md"><i class="fa-solid fa-qrcode mr-1.5"></i> Install</a>`;
-        } else if(req.status === 'rejected') {
+        if (isApproved) {
+            if (isUsed) {
+                statusUI = `<span class="bg-black/30 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white tracking-widest uppercase inline-flex items-center gap-1"><i class="fa-solid fa-circle-check text-green-400"></i> Usada</span>`;
+            } else {
+                statusUI = `<span class="bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white tracking-widest uppercase inline-flex items-center gap-1"><i class="fa-solid fa-bolt text-yellow-300"></i> Lista</span>`;
+            }
+
+            actionUI = `
+                <div class="flex items-center gap-2">
+                    <button 
+                        onclick="toggleEsimUsed('${req.id}', ${isUsed})" 
+                        class="p-2 md:px-3 md:py-2 rounded-xl text-xs font-bold transition active:scale-95 flex items-center gap-1.5 ${isUsed ? 'bg-black/40 hover:bg-black/60 text-zinc-200' : 'bg-white/20 hover:bg-white/30 text-white'} backdrop-blur-md shadow-sm"
+                        title="${isUsed ? 'Marcar como pendiente/no usada' : 'Marcar como ya instalada/usada'}"
+                    >
+                        <i class="fa-solid ${isUsed ? 'fa-rotate-left' : 'fa-check'}"></i>
+                        <span class="hidden sm:inline">${isUsed ? 'Desmarcar' : 'Usada'}</span>
+                    </button>
+                    <a 
+                        href="${req.installation_link}" 
+                        target="_blank" 
+                        class="bg-white text-black text-center px-3.5 py-2 rounded-xl font-black text-xs active:scale-95 transition inline-flex items-center shadow-md hover:bg-zinc-100"
+                    >
+                        <i class="fa-solid fa-qrcode mr-1.5"></i> Instalar
+                    </a>
+                </div>
+            `;
+        } else if (req.status === 'rejected') {
             statusUI = `<span class="bg-red-500/80 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white tracking-widest uppercase">Cancelled</span>`;
             actionUI = `<span class="text-white/50 text-xs font-bold">Denied</span>`;
-        } else if(req.status === 'processing') {
+        } else if (req.status === 'processing') {
             statusUI = `<span class="bg-blue-500/80 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white tracking-widest uppercase"><i class="fa-solid fa-gear fa-spin mr-1"></i> Processing</span>`;
             actionUI = `<span class="text-white/80 text-xs font-bold">Preparing...</span>`;
         } else {
@@ -356,13 +404,15 @@ async function loadUserRequests() {
             statusUI = `<span class="bg-yellow-500/90 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white tracking-widest uppercase mr-2 shadow-sm"><i class="fa-solid fa-gift mr-1"></i> Gift</span>` + statusUI;
         }
 
+        const cardStyleModifier = isUsed ? 'opacity-75 saturate-[0.85]' : '';
+
         container.innerHTML += `
-            <div class="relative bg-gradient-to-r ${bgClass} rounded-2xl p-5 text-white shadow-lg overflow-hidden flex items-center justify-between gap-4">
+            <div class="relative bg-gradient-to-r ${bgClass} rounded-2xl p-5 text-white shadow-lg overflow-hidden flex items-center justify-between gap-4 transition-all duration-300 ${cardStyleModifier}">
                 <div class="absolute -right-6 -bottom-6 text-white/10 text-7xl pointer-events-none"><i class="fa-solid fa-sim-card"></i></div>
                 <div class="relative z-10 min-w-0 flex-1">
                     <div class="flex items-center gap-2 mb-1 flex-wrap">
                         <h3 class="text-lg font-black tracking-tight truncate">${req.country}</h3>
-                        <div class="flex">${statusUI}</div>
+                        <div class="flex items-center">${statusUI}</div>
                     </div>
                     <div class="flex items-baseline gap-1.5">
                         <span class="text-2xl font-black tracking-tighter">${plan.large}</span>
@@ -479,13 +529,14 @@ async function loadAdminHistory() {
         const plan = getPlanInfo(req);
         let linkHtml = req.installation_link ? `<a href="${req.installation_link}" target="_blank" class="w-8 h-8 bg-zinc-100 text-zinc-600 hover:bg-blue-100 hover:text-blue-600 rounded-full flex items-center justify-center transition" title="View Link"><i class="fa-solid fa-link text-xs"></i></a>` : '';
         let costStr = req.price ? `<span class="text-green-600 font-black">${parseFloat(req.price).toFixed(2)} <span class="text-xs font-bold text-zinc-400">AED</span></span>` : '<span class="text-zinc-300">-</span>';
+        let usedBadge = req.is_used ? '<span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full ml-1">Usada</span>' : '';
         
         container.innerHTML += `
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-zinc-100 flex items-center justify-between gap-4">
                 <div class="w-2 h-12 rounded-full bg-zinc-100 ${req.status === 'approved' ? '!bg-green-400' : req.status === 'rejected' ? '!bg-red-400' : ''}"></div>
                 <div class="flex-1 overflow-hidden">
                     <p class="text-[10px] text-zinc-400 font-bold tracking-widest uppercase truncate">${req.profiles?.email?.split('@')[0] || 'Unknown'}</p>
-                    <h4 class="font-bold text-lg text-zinc-900 truncate tracking-tight leading-tight">${req.country} ${req.is_gift ? '🎁' : ''}</h4>
+                    <h4 class="font-bold text-lg text-zinc-900 truncate tracking-tight leading-tight">${req.country} ${req.is_gift ? '🎁' : ''} ${usedBadge}</h4>
                     <p class="text-xs text-zinc-500 font-medium">${plan.large} ${plan.small.toLowerCase()}</p>
                 </div>
                 <div class="text-right">
