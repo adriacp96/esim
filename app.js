@@ -333,7 +333,7 @@ async function toggleEsimUsed(reqId, currentUsedState) {
     if (error) {
         showToast(error.message, 'error');
     } else {
-        showToast(nextState ? 'eSIM marcada como usada' : 'eSIM marcada como no usada', 'success');
+        showToast(nextState ? 'eSIM marked as used' : 'eSIM marked as unused', 'success');
         loadUserRequests();
     }
 }
@@ -365,9 +365,9 @@ async function loadUserRequests() {
 
         if (isApproved) {
             if (isUsed) {
-                statusUI = `<span class="bg-black/30 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white tracking-widest uppercase inline-flex items-center gap-1"><i class="fa-solid fa-circle-check text-green-400"></i> Usada</span>`;
+                statusUI = `<span class="bg-black/30 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white tracking-widest uppercase inline-flex items-center gap-1"><i class="fa-solid fa-circle-check text-green-400"></i> Used</span>`;
             } else {
-                statusUI = `<span class="bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white tracking-widest uppercase inline-flex items-center gap-1"><i class="fa-solid fa-bolt text-yellow-300"></i> Lista</span>`;
+                statusUI = `<span class="bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white tracking-widest uppercase inline-flex items-center gap-1"><i class="fa-solid fa-bolt text-yellow-300"></i> Ready</span>`;
             }
 
             actionUI = `
@@ -375,17 +375,17 @@ async function loadUserRequests() {
                     <button 
                         onclick="toggleEsimUsed('${req.id}', ${isUsed})" 
                         class="p-2 md:px-3 md:py-2 rounded-xl text-xs font-bold transition active:scale-95 flex items-center gap-1.5 ${isUsed ? 'bg-black/40 hover:bg-black/60 text-zinc-200' : 'bg-white/20 hover:bg-white/30 text-white'} backdrop-blur-md shadow-sm"
-                        title="${isUsed ? 'Marcar como pendiente/no usada' : 'Marcar como ya instalada/usada'}"
+                        title="${isUsed ? 'Mark as unused' : 'Mark as used'}"
                     >
                         <i class="fa-solid ${isUsed ? 'fa-rotate-left' : 'fa-check'}"></i>
-                        <span class="hidden sm:inline">${isUsed ? 'Desmarcar' : 'Usada'}</span>
+                        <span class="hidden sm:inline">${isUsed ? 'Unmark' : 'Used'}</span>
                     </button>
                     <a 
                         href="${req.installation_link}" 
                         target="_blank" 
                         class="bg-white text-black text-center px-3.5 py-2 rounded-xl font-black text-xs active:scale-95 transition inline-flex items-center shadow-md hover:bg-zinc-100"
                     >
-                        <i class="fa-solid fa-qrcode mr-1.5"></i> Instalar
+                        <i class="fa-solid fa-qrcode mr-1.5"></i> Install
                     </a>
                 </div>
             `;
@@ -529,7 +529,7 @@ async function loadAdminHistory() {
         const plan = getPlanInfo(req);
         let linkHtml = req.installation_link ? `<a href="${req.installation_link}" target="_blank" class="w-8 h-8 bg-zinc-100 text-zinc-600 hover:bg-blue-100 hover:text-blue-600 rounded-full flex items-center justify-center transition" title="View Link"><i class="fa-solid fa-link text-xs"></i></a>` : '';
         let costStr = req.price ? `<span class="text-green-600 font-black">${parseFloat(req.price).toFixed(2)} <span class="text-xs font-bold text-zinc-400">AED</span></span>` : '<span class="text-zinc-300">-</span>';
-        let usedBadge = req.is_used ? '<span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full ml-1">Usada</span>' : '';
+        let usedBadge = req.is_used ? '<span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full ml-1">Used</span>' : '';
         
         container.innerHTML += `
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-zinc-100 flex items-center justify-between gap-4">
